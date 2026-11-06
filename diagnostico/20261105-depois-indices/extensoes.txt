@@ -1,0 +1,7 @@
+                                    List of installed extensions
+  Name   | Version |   Schema   |                            Description                            
+---------+---------+------------+-------------------------------------------------------------------
+ pg_trgm | 1.6     | public     | text similarity measurement and index searching based on trigrams
+ plpgsql | 1.0     | pg_catalog | PL/pgSQL procedural language
+(2 rows)
+

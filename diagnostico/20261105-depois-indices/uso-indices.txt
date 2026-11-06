@@ -1,0 +1,19 @@
+    tabela    |            indice            | idx_scan | idx_tup_read | idx_tup_fetch 
+--------------+------------------------------+----------+--------------+---------------
+ produtos     | produtos_pkey                |  1506859 |      1506859 |       1506741
+ pedidos      | pedidos_pkey                 |  1500456 |      1500456 |       1500014
+ itens_pedido | idx_itens_pedido_pedido_id   |   700936 |      2101722 |       2101280
+ clientes     | clientes_pkey                |   501076 |       501068 |        501068
+ pedidos      | idx_pedidos_status_criado_em |      935 |     76340040 |       2615040
+ pedidos      | idx_pedidos_cliente_id       |      468 |         2340 |          2340
+ produtos     | idx_produtos_nome_trgm       |      373 |       522331 |             0
+ clientes     | idx_clientes_email_lower     |      350 |          346 |           346
+ pedidos      | idx_pedidos_criado_em_dia    |      196 |       775654 |             6
+ itens_pedido | itens_pedido_pkey            |        0 |            0 |             0
+(10 rows)
+
+ stats_reset 
+-------------
+ 
+(1 row)
+

@@ -1,0 +1,14 @@
+            indice            |    tabela    |  bytes   | tamanho 
+------------------------------+--------------+----------+---------
+ itens_pedido_pkey            | itens_pedido | 33710080 | 32 MB
+ idx_pedidos_status_criado_em | pedidos      | 22118400 | 21 MB
+ idx_itens_pedido_pedido_id   | itens_pedido | 22003712 | 21 MB
+ pedidos_pkey                 | pedidos      | 11255808 | 11 MB
+ idx_pedidos_cliente_id       | pedidos      |  5857280 | 5720 kB
+ idx_clientes_email_lower     | clientes     |  4907008 | 4792 kB
+ idx_pedidos_criado_em_dia    | pedidos      |  3637248 | 3552 kB
+ clientes_pkey                | clientes     |  2260992 | 2208 kB
+ idx_produtos_nome_trgm       | produtos     |  1171456 | 1144 kB
+ produtos_pkey                | produtos     |   466944 | 456 kB
+(10 rows)
+

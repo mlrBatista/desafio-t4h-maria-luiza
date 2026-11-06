@@ -1,0 +1,6 @@
+idx_clientes_email_lower
+idx_itens_pedido_pedido_id
+idx_pedidos_cliente_id
+idx_pedidos_criado_em_dia
+idx_pedidos_status_criado_em
+idx_produtos_nome_trgm
