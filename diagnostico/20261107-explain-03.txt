@@ -1,0 +1,31 @@
+# EXPLAIN ANALYZE depois da mudança 03, banco ocioso (2026-11-07 20:26:49 -0300). Pedidos do cliente 90142: 89971,189971,289971,389971,489971
+                                                                        QUERY PLAN                                                                         
+-----------------------------------------------------------------------------------------------------------------------------------------------------------
+ Incremental Sort  (cost=10.02..168.77 rows=18 width=47) (actual time=1.476..1.481 rows=10 loops=1)
+   Sort Key: i.pedido_id, i.id
+   Presorted Key: i.pedido_id
+   Full-sort Groups: 1  Sort Method: quicksort  Average Memory: 25kB  Peak Memory: 25kB
+   Buffers: shared hit=47 read=9
+   ->  Nested Loop  (cost=0.71..167.96 rows=18 width=47) (actual time=0.307..1.278 rows=10 loops=1)
+         Buffers: shared hit=44 read=9
+         ->  Index Scan using idx_itens_pedido_pedido_id on itens_pedido i  (cost=0.43..26.47 rows=18 width=20) (actual time=0.263..0.788 rows=10 loops=1)
+               Index Cond: (pedido_id = ANY ('{89971,189971,289971,389971,489971}'::integer[]))
+               Buffers: shared hit=15 read=8
+         ->  Index Scan using produtos_pkey on produtos pr  (cost=0.29..7.86 rows=1 width=31) (actual time=0.044..0.044 rows=1 loops=10)
+               Index Cond: (id = i.produto_id)
+               Buffers: shared hit=29 read=1
+ Planning:
+   Buffers: shared hit=162 read=8
+ Planning Time: 9.671 ms
+ Execution Time: 2.714 ms
+(17 rows)
+
+## top-produtos, execução 1 (mesma consulta de diagnostico/explain-rotas.sql)
+                                       ->  Parallel Seq Scan on itens_pedido i  (cost=0.00..15805.00 rows=625000 width=16) (actual time=0.080..493.675 rows=500000 loops=3)
+ Execution Time: 4854.158 ms
+## top-produtos, execução 2 (mesma consulta de diagnostico/explain-rotas.sql)
+                                       ->  Parallel Seq Scan on itens_pedido i  (cost=0.00..15805.00 rows=625000 width=16) (actual time=0.104..373.553 rows=500000 loops=3)
+ Execution Time: 4007.962 ms
+## top-produtos, execução 3 (mesma consulta de diagnostico/explain-rotas.sql)
+                                       ->  Parallel Seq Scan on itens_pedido i  (cost=0.00..15805.00 rows=625000 width=16) (actual time=0.069..322.409 rows=500000 loops=3)
+ Execution Time: 3999.372 ms
