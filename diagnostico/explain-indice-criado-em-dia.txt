@@ -1,0 +1,234 @@
+##### COM o indice
+--- com, execucao 1
+                                                                                            QUERY PLAN                                                                                            
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ GroupAggregate  (cost=38524.58..46166.52 rows=18441 width=80) (actual time=977.715..999.634 rows=31 loops=1)
+   Group Key: (to_char(((p.criado_em)::date)::timestamp with time zone, 'YYYY-MM-DD'::text))
+   Buffers: shared hit=8630 read=4529
+   ->  Gather Merge  (cost=38524.58..44967.85 rows=55323 width=44) (actual time=977.130..991.977 rows=57244 loops=1)
+         Workers Planned: 2
+         Workers Launched: 2
+         Buffers: shared hit=8630 read=4529
+         ->  Sort  (cost=37524.55..37582.18 rows=23051 width=44) (actual time=943.228..944.891 rows=19081 loops=3)
+               Sort Key: (to_char(((p.criado_em)::date)::timestamp with time zone, 'YYYY-MM-DD'::text)), p.id
+               Sort Method: quicksort  Memory: 1691kB
+               Buffers: shared hit=8630 read=4529
+               Worker 0:  Sort Method: quicksort  Memory: 1629kB
+               Worker 1:  Sort Method: quicksort  Memory: 1668kB
+               ->  Parallel Hash Join  (cost=18235.70..35854.22 rows=23051 width=44) (actual time=115.135..904.330 rows=19081 loops=3)
+                     Hash Cond: (i.pedido_id = p.id)
+                     Buffers: shared hit=8542 read=4529
+                     ->  Parallel Seq Scan on itens_pedido i  (cost=0.00..15805.00 rows=625000 width=12) (actual time=0.266..686.196 rows=500000 loops=3)
+                           Buffers: shared hit=5026 read=4529
+                     ->  Parallel Hash  (cost=18139.65..18139.65 rows=7684 width=12) (actual time=112.313..112.313 rows=6361 loops=3)
+                           Buckets: 32768  Batches: 1  Memory Usage: 1184kB
+                           Buffers: shared hit=3422
+                           ->  Parallel Index Only Scan using idx_pedidos_status_criado_em on pedidos p  (cost=0.42..18139.65 rows=7684 width=12) (actual time=15.801..107.918 rows=6361 loops=3)
+                                 Filter: ((status <> 'cancelado'::text) AND ((criado_em)::date >= '2025-01-01'::date) AND ((criado_em)::date <= '2025-01-31'::date))
+                                 Rows Removed by Filter: 160305
+                                 Heap Fetches: 960
+                                 Buffers: shared hit=3422
+ Planning:
+   Buffers: shared hit=277 read=1 dirtied=3
+ Planning Time: 1.396 ms
+ Execution Time: 999.806 ms
+(30 rows)
+
+--- com, execucao 2
+                                                                                           QUERY PLAN                                                                                            
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ GroupAggregate  (cost=38524.58..46166.52 rows=18441 width=80) (actual time=589.745..674.477 rows=31 loops=1)
+   Group Key: (to_char(((p.criado_em)::date)::timestamp with time zone, 'YYYY-MM-DD'::text))
+   Buffers: shared hit=8732 read=4433
+   ->  Gather Merge  (cost=38524.58..44967.85 rows=55323 width=44) (actual time=589.202..667.767 rows=57244 loops=1)
+         Workers Planned: 2
+         Workers Launched: 2
+         Buffers: shared hit=8732 read=4433
+         ->  Sort  (cost=37524.55..37582.18 rows=23051 width=44) (actual time=582.140..583.598 rows=19081 loops=3)
+               Sort Key: (to_char(((p.criado_em)::date)::timestamp with time zone, 'YYYY-MM-DD'::text)), p.id
+               Sort Method: quicksort  Memory: 1643kB
+               Buffers: shared hit=8732 read=4433
+               Worker 0:  Sort Method: quicksort  Memory: 1729kB
+               Worker 1:  Sort Method: quicksort  Memory: 1617kB
+               ->  Parallel Hash Join  (cost=18235.70..35854.22 rows=23051 width=44) (actual time=109.528..472.841 rows=19081 loops=3)
+                     Hash Cond: (i.pedido_id = p.id)
+                     Buffers: shared hit=8644 read=4433
+                     ->  Parallel Seq Scan on itens_pedido i  (cost=0.00..15805.00 rows=625000 width=12) (actual time=0.022..117.054 rows=500000 loops=3)
+                           Buffers: shared hit=5122 read=4433
+                     ->  Parallel Hash  (cost=18139.65..18139.65 rows=7684 width=12) (actual time=108.716..108.717 rows=6361 loops=3)
+                           Buckets: 32768  Batches: 1  Memory Usage: 1216kB
+                           Buffers: shared hit=3428
+                           ->  Parallel Index Only Scan using idx_pedidos_status_criado_em on pedidos p  (cost=0.42..18139.65 rows=7684 width=12) (actual time=8.622..106.169 rows=6361 loops=3)
+                                 Filter: ((status <> 'cancelado'::text) AND ((criado_em)::date >= '2025-01-01'::date) AND ((criado_em)::date <= '2025-01-31'::date))
+                                 Rows Removed by Filter: 160305
+                                 Heap Fetches: 960
+                                 Buffers: shared hit=3428
+ Planning:
+   Buffers: shared hit=16
+ Planning Time: 0.369 ms
+ Execution Time: 674.750 ms
+(30 rows)
+
+--- com, execucao 3
+                                                                                            QUERY PLAN                                                                                            
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ GroupAggregate  (cost=38524.58..46166.52 rows=18441 width=80) (actual time=706.762..728.700 rows=31 loops=1)
+   Group Key: (to_char(((p.criado_em)::date)::timestamp with time zone, 'YYYY-MM-DD'::text))
+   Buffers: shared hit=8817 read=4337
+   ->  Gather Merge  (cost=38524.58..44967.85 rows=55323 width=44) (actual time=705.776..721.346 rows=57244 loops=1)
+         Workers Planned: 2
+         Workers Launched: 2
+         Buffers: shared hit=8817 read=4337
+         ->  Sort  (cost=37524.55..37582.18 rows=23051 width=44) (actual time=699.101..700.755 rows=19081 loops=3)
+               Sort Key: (to_char(((p.criado_em)::date)::timestamp with time zone, 'YYYY-MM-DD'::text)), p.id
+               Sort Method: quicksort  Memory: 1543kB
+               Buffers: shared hit=8817 read=4337
+               Worker 0:  Sort Method: quicksort  Memory: 1614kB
+               Worker 1:  Sort Method: quicksort  Memory: 1831kB
+               ->  Parallel Hash Join  (cost=18235.70..35854.22 rows=23051 width=44) (actual time=217.293..578.002 rows=19081 loops=3)
+                     Hash Cond: (i.pedido_id = p.id)
+                     Buffers: shared hit=8729 read=4337
+                     ->  Parallel Seq Scan on itens_pedido i  (cost=0.00..15805.00 rows=625000 width=12) (actual time=0.041..138.644 rows=500000 loops=3)
+                           Buffers: shared hit=5218 read=4337
+                     ->  Parallel Hash  (cost=18139.65..18139.65 rows=7684 width=12) (actual time=215.751..215.752 rows=6361 loops=3)
+                           Buckets: 32768  Batches: 1  Memory Usage: 1216kB
+                           Buffers: shared hit=3417
+                           ->  Parallel Index Only Scan using idx_pedidos_status_criado_em on pedidos p  (cost=0.42..18139.65 rows=7684 width=12) (actual time=17.563..190.755 rows=6361 loops=3)
+                                 Filter: ((status <> 'cancelado'::text) AND ((criado_em)::date >= '2025-01-01'::date) AND ((criado_em)::date <= '2025-01-31'::date))
+                                 Rows Removed by Filter: 160305
+                                 Heap Fetches: 960
+                                 Buffers: shared hit=3417
+ Planning:
+   Buffers: shared hit=16
+ Planning Time: 0.285 ms
+ Execution Time: 728.832 ms
+(30 rows)
+
+##### SEM o indice, execucao 1
+BEGIN
+DROP INDEX
+                                                                                        QUERY PLAN                                                                                         
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ GroupAggregate  (cost=25835.12..26768.76 rows=2253 width=80) (actual time=467.598..485.641 rows=31 loops=1)
+   Group Key: (to_char(((p.criado_em)::date)::timestamp with time zone, 'YYYY-MM-DD'::text))
+   Buffers: shared hit=80015
+   ->  Gather Merge  (cost=25835.12..26622.31 rows=6759 width=44) (actual time=466.991..479.409 rows=57244 loops=1)
+         Workers Planned: 2
+         Workers Launched: 2
+         Buffers: shared hit=80015
+         ->  Sort  (cost=24835.09..24842.13 rows=2816 width=44) (actual time=422.896..424.272 rows=19081 loops=3)
+               Sort Key: (to_char(((p.criado_em)::date)::timestamp with time zone, 'YYYY-MM-DD'::text)), p.id
+               Sort Method: quicksort  Memory: 1682kB
+               Buffers: shared hit=80015
+               Worker 0:  Sort Method: quicksort  Memory: 1594kB
+               Worker 1:  Sort Method: quicksort  Memory: 1713kB
+               ->  Nested Loop  (cost=0.85..24673.75 rows=2816 width=44) (actual time=44.900..378.121 rows=19081 loops=3)
+                     Buffers: shared hit=79985
+                     ->  Parallel Index Only Scan using idx_pedidos_status_criado_em on pedidos p  (cost=0.42..18139.65 rows=939 width=12) (actual time=44.754..243.130 rows=6361 loops=3)
+                           Filter: ((status <> 'cancelado'::text) AND ((criado_em)::date >= '2025-01-01'::date) AND ((criado_em)::date <= '2025-01-31'::date))
+                           Rows Removed by Filter: 160305
+                           Heap Fetches: 960
+                           Buffers: shared hit=3400
+                     ->  Index Scan using idx_itens_pedido_pedido_id on itens_pedido i  (cost=0.43..6.90 rows=4 width=12) (actual time=0.017..0.018 rows=3 loops=19084)
+                           Index Cond: (pedido_id = p.id)
+                           Buffers: shared hit=76585
+ Planning:
+   Buffers: shared hit=24
+ Planning Time: 0.215 ms
+ Execution Time: 485.756 ms
+(27 rows)
+
+ROLLBACK
+##### SEM o indice, execucao 2
+BEGIN
+DROP INDEX
+                                                                                        QUERY PLAN                                                                                         
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ GroupAggregate  (cost=25835.12..26768.76 rows=2253 width=80) (actual time=310.372..379.991 rows=31 loops=1)
+   Group Key: (to_char(((p.criado_em)::date)::timestamp with time zone, 'YYYY-MM-DD'::text))
+   Buffers: shared hit=80017
+   ->  Gather Merge  (cost=25835.12..26622.31 rows=6759 width=44) (actual time=309.758..373.984 rows=57244 loops=1)
+         Workers Planned: 2
+         Workers Launched: 2
+         Buffers: shared hit=80017
+         ->  Sort  (cost=24835.09..24842.13 rows=2816 width=44) (actual time=300.435..301.766 rows=19081 loops=3)
+               Sort Key: (to_char(((p.criado_em)::date)::timestamp with time zone, 'YYYY-MM-DD'::text)), p.id
+               Sort Method: quicksort  Memory: 1824kB
+               Buffers: shared hit=80017
+               Worker 0:  Sort Method: quicksort  Memory: 877kB
+               Worker 1:  Sort Method: quicksort  Memory: 1904kB
+               ->  Nested Loop  (cost=0.85..24673.75 rows=2816 width=44) (actual time=11.546..279.140 rows=19081 loops=3)
+                     Buffers: shared hit=79987
+                     ->  Parallel Index Only Scan using idx_pedidos_status_criado_em on pedidos p  (cost=0.42..18139.65 rows=939 width=12) (actual time=11.396..124.404 rows=6361 loops=3)
+                           Filter: ((status <> 'cancelado'::text) AND ((criado_em)::date >= '2025-01-01'::date) AND ((criado_em)::date <= '2025-01-31'::date))
+                           Rows Removed by Filter: 160305
+                           Heap Fetches: 960
+                           Buffers: shared hit=3402
+                     ->  Index Scan using idx_itens_pedido_pedido_id on itens_pedido i  (cost=0.43..6.90 rows=4 width=12) (actual time=0.007..0.013 rows=3 loops=19084)
+                           Index Cond: (pedido_id = p.id)
+                           Buffers: shared hit=76585
+ Planning:
+   Buffers: shared hit=24
+ Planning Time: 0.365 ms
+ Execution Time: 380.135 ms
+(27 rows)
+
+ROLLBACK
+##### SEM o indice, execucao 3
+BEGIN
+DROP INDEX
+                                                                                        QUERY PLAN                                                                                         
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ GroupAggregate  (cost=25835.12..26768.76 rows=2253 width=80) (actual time=402.315..430.193 rows=31 loops=1)
+   Group Key: (to_char(((p.criado_em)::date)::timestamp with time zone, 'YYYY-MM-DD'::text))
+   Buffers: shared hit=80014
+   ->  Gather Merge  (cost=25835.12..26622.31 rows=6759 width=44) (actual time=401.440..420.680 rows=57244 loops=1)
+         Workers Planned: 2
+         Workers Launched: 2
+         Buffers: shared hit=80014
+         ->  Sort  (cost=24835.09..24842.13 rows=2816 width=44) (actual time=373.551..375.435 rows=19081 loops=3)
+               Sort Key: (to_char(((p.criado_em)::date)::timestamp with time zone, 'YYYY-MM-DD'::text)), p.id
+               Sort Method: quicksort  Memory: 1600kB
+               Buffers: shared hit=80014
+               Worker 0:  Sort Method: quicksort  Memory: 1881kB
+               Worker 1:  Sort Method: quicksort  Memory: 1125kB
+               ->  Nested Loop  (cost=0.85..24673.75 rows=2816 width=44) (actual time=12.168..286.509 rows=19081 loops=3)
+                     Buffers: shared hit=79984
+                     ->  Parallel Index Only Scan using idx_pedidos_status_criado_em on pedidos p  (cost=0.42..18139.65 rows=939 width=12) (actual time=12.028..144.507 rows=6361 loops=3)
+                           Filter: ((status <> 'cancelado'::text) AND ((criado_em)::date >= '2025-01-01'::date) AND ((criado_em)::date <= '2025-01-31'::date))
+                           Rows Removed by Filter: 160305
+                           Heap Fetches: 960
+                           Buffers: shared hit=3399
+                     ->  Index Scan using idx_itens_pedido_pedido_id on itens_pedido i  (cost=0.43..6.90 rows=4 width=12) (actual time=0.010..0.011 rows=3 loops=19084)
+                           Index Cond: (pedido_id = p.id)
+                           Buffers: shared hit=76585
+ Planning:
+   Buffers: shared hit=24
+ Planning Time: 0.340 ms
+ Execution Time: 430.490 ms
+(27 rows)
+
+ROLLBACK
+##### Indice ao final (
+                            List of relations
+ Schema |             Name             | Type  | Owner |      Table      
+--------+------------------------------+-------+-------+-----------------
+ public | clientes_pkey                | index | loja  | clientes
+ public | idx_clientes_email_lower     | index | loja  | clientes
+ public | idx_itens_pedido_pedido_id   | index | loja  | itens_pedido
+ public | idx_pedidos_cliente_id       | index | loja  | pedidos
+ public | idx_pedidos_criado_em_dia    | index | loja  | pedidos
+ public | idx_pedidos_status_criado_em | index | loja  | pedidos
+ public | idx_produtos_nome_trgm       | index | loja  | produtos
+ public | idx_top_produtos_mv_receita  | index | loja  | top_produtos_mv
+ public | itens_pedido_pkey            | index | loja  | itens_pedido
+ public | pedidos_pkey                 | index | loja  | pedidos
+ public | produtos_pkey                | index | loja  | produtos
+(11 rows)
+
+                      List of relations
+ Schema |           Name            | Type  | Owner |  Table  
+--------+---------------------------+-------+-------+---------
+ public | idx_pedidos_criado_em_dia | index | loja  | pedidos
+(1 row)
+
