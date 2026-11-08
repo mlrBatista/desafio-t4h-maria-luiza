@@ -1,0 +1,16 @@
+# Tamanho da view vendas_por_dia_mv (mudança 06), banco criado do zero em 2026-11-08 11:44:39 -0300. Fonte: pg_total_relation_size / pg_relation_size.
+      objeto       | linhas | bytes_total | tamanho_total 
+-------------------+--------+-------------+---------------
+ vendas_por_dia_mv |    731 |      106496 | 104 kB
+(1 row)
+
+          indice           | bytes | tamanho 
+---------------------------+-------+---------
+ idx_vendas_por_dia_mv_dia | 32768 | 32 kB
+(1 row)
+
+    objeto    | tamanho 
+--------------+---------
+ banco (loja) | 361 MB
+(1 row)
+
