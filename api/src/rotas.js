@@ -169,33 +169,27 @@ rotas.get('/relatorios/vendas-por-dia', assincrono(async (req, res) => {
     return res.status(400).json({ erro: `o periodo deve ter entre 1 e ${MAX_DIAS_RELATORIO} dias` });
   }
 
+  // A agregação por dia é feita no banco: a API recebe no máximo 31 linhas em vez de ~57 mil.
   const linhas = await consultar(
-    `SELECT p.id AS pedido_id, p.criado_em, p.observacoes, i.quantidade, i.preco_unitario_centavos
+    `SELECT to_char(p.criado_em::date, 'YYYY-MM-DD') AS dia,
+            count(DISTINCT p.id) AS pedidos,
+            sum(i.quantidade) AS itens,
+            sum(i.quantidade::bigint * i.preco_unitario_centavos) AS receita_centavos
        FROM pedidos p
        JOIN itens_pedido i ON i.pedido_id = p.id
       WHERE p.criado_em::date BETWEEN $1 AND $2
-        AND p.status <> 'cancelado'`,
+        AND p.status <> 'cancelado'
+      GROUP BY 1
+      ORDER BY 1`,
     [req.query.inicio, req.query.fim],
   );
 
-  const porDia = new Map();
-  for (const linha of linhas) {
-    const dia = linha.criado_em.toISOString().slice(0, 10);
-    if (!porDia.has(dia)) porDia.set(dia, { pedidos: new Set(), itens: 0, receita: 0 });
-    const acumulado = porDia.get(dia);
-    acumulado.pedidos.add(linha.pedido_id);
-    acumulado.itens += linha.quantidade;
-    acumulado.receita += linha.quantidade * linha.preco_unitario_centavos;
-  }
-
-  const resposta = [...porDia.entries()]
-    .sort(([a], [b]) => (a < b ? -1 : 1))
-    .map(([dia, acumulado]) => ({
-      dia,
-      pedidos: acumulado.pedidos.size,
-      itens: acumulado.itens,
-      receita_centavos: acumulado.receita,
-    }));
+  const resposta = linhas.map((linha) => ({
+    dia: linha.dia,
+    pedidos: Number(linha.pedidos),
+    itens: Number(linha.itens),
+    receita_centavos: Number(linha.receita_centavos),
+  }));
 
   res.json(resposta);
 }));
