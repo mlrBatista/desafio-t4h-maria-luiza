@@ -1,0 +1,17 @@
+Medição: 03-consulta-unica-v2
+Carga: 20 usuários virtuais por 60s
+
+Requisições:        610
+Requisições/s:      8.60
+Tempo de resposta:  mediana 1031.5 ms | p95 9903.0 ms | p99 23524.2 ms
+Erros:              0.00%
+
+Por rota:
+rota                  req       mediana       p95           p99           erros   
+cliente               158       599.6 ms      2096.3 ms     5634.1 ms     0.0%    
+cliente-por-email     86        496.9 ms      1386.8 ms     2010.6 ms     0.0%    
+pedidos-do-cliente    125       1724.7 ms     7270.6 ms     10784.0 ms    0.0%    
+pedidos-por-status    87        1986.7 ms     25610.3 ms    31801.9 ms    0.0%    
+busca-produtos        103       505.0 ms      2688.5 ms     9726.0 ms     0.0%    
+vendas-por-dia        42        3378.5 ms     9901.2 ms     12428.5 ms    0.0%    
+top-produtos          9         14883.9 ms    19808.4 ms    21480.1 ms    0.0%    
