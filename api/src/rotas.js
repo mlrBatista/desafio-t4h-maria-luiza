@@ -205,15 +205,9 @@ rotas.get('/relatorios/top-produtos', assincrono(async (req, res) => {
   if (limite === null || limite > 50) return res.status(400).json({ erro: 'limite deve ser um inteiro entre 1 e 50' });
 
   const linhas = await consultar(
-    `SELECT pr.id, pr.nome, pr.categoria,
-            sum(i.quantidade) AS unidades,
-            sum(i.quantidade * i.preco_unitario_centavos) AS receita_centavos
-       FROM itens_pedido i
-       JOIN pedidos p ON p.id = i.pedido_id
-       JOIN produtos pr ON pr.id = i.produto_id
-      WHERE p.status <> 'cancelado'
-      GROUP BY pr.id, pr.nome, pr.categoria
-      ORDER BY receita_centavos DESC, pr.id
+    `SELECT id, nome, categoria, unidades, receita_centavos
+       FROM top_produtos_mv
+      ORDER BY receita_centavos DESC, id
       LIMIT $1`,
     [limite],
   );
