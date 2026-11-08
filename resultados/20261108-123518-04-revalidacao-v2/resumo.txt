@@ -1,0 +1,17 @@
+Medição: 04-revalidacao-v2
+Carga: 20 usuários virtuais por 60s
+
+Requisições:        1704
+Requisições/s:      27.85
+Tempo de resposta:  mediana 565.9 ms | p95 1794.4 ms | p99 2411.0 ms
+Erros:              0.00%
+
+Por rota:
+rota                  req       mediana       p95           p99           erros   
+cliente               442       313.8 ms      1172.1 ms     1509.0 ms     0.0%    
+cliente-por-email     257       339.4 ms      1202.2 ms     1529.5 ms     0.0%    
+pedidos-do-cliente    352       802.9 ms      1826.2 ms     2233.5 ms     0.0%    
+pedidos-por-status    236       1146.7 ms     2325.4 ms     3157.9 ms     0.0%    
+busca-produtos        259       362.0 ms      1177.9 ms     1749.0 ms     0.0%    
+vendas-por-dia        129       1203.6 ms     2293.7 ms     2568.6 ms     0.0%    
+top-produtos          29        290.9 ms      1519.3 ms     1666.2 ms     0.0%    
