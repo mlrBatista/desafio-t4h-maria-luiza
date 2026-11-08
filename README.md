@@ -4,6 +4,33 @@ Aplicação do desafio técnico da vaga de estágio em Pesquisa e Inovação da 
 
 A aplicação é a API de uma loja fictícia, em Node.js (Express) com PostgreSQL 16, rodando em containers. Ela funciona, mas fica lenta sob carga e gasta mais recursos do que deveria. Todos os dados são sintéticos e gerados na primeira subida: 100 mil clientes, 20 mil produtos, 500 mil pedidos e 1,5 milhão de itens de pedido.
 
+## O que foi feito neste repositório
+
+**O problema.** Sob a carga do teste (20 usuários virtuais por 60 s), a aplicação original atendia 1.69 requisições/s, com p95 de 38198.7 ms. O banco ficava a ~98% de CPU porque quase todas as consultas liam tabelas inteiras, e algumas rotas faziam dezenas de consultas por requisição ou somavam milhões de linhas a cada chamada.
+
+**O que foi feito.** Seis mudanças, uma por commit, cada uma medida 3 vezes com `scripts/medir.sh` e com o contrato verificado (as respostas da API continuam idênticas):
+
+| # | Mudança | req/s antes → depois (mediana de 3) | Resultado |
+|---|---|---|---|
+| 01 | Pool de conexões na API | 1.69 → 2.15 | ganho pequeno |
+| 02 | Índices para as consultas das rotas | 2.15 → 9.43 | ~4,4x |
+| 03 | Fim do N+1 em `/clientes/:id/pedidos` | 8.35 → 8.60 | sem ganho de vazão: a rota melhorou, as outras pioraram |
+| 04 | Materialized view para `top-produtos` | 8.27 → 22.06 | ~2,7x; o gargalo passou do banco para a API |
+| 05 | `vendas-por-dia` agregado no SQL | 26.59 → 27.07 | sem ganho de vazão: a CPU da API caiu, o gargalo voltou para o banco |
+| 06 | Materialized view para `vendas-por-dia` | 29.29 → 53.61 | ~1,8x |
+
+A partir da 03, o "antes" é um controle medido no mesmo dia e no mesmo banco, com o código anterior, porque a máquina variou mais entre dias do que o efeito de algumas mudanças. Por isso, os números de linhas diferentes da tabela não devem ser comparados entre si.
+
+**Por onde ler.**
+
+1. [experimentos.md](experimentos.md): cada mudança com hipótese, fonte da ideia, pastas de antes e depois, métricas e conclusão, além das séries que ficaram de fora e por quê.
+2. [diagnostico/](diagnostico/): as evidências que motivaram cada mudança (`EXPLAIN ANALYZE`, perfil de CPU da API, comparações de respostas).
+3. [resultados/](resultados/): a saída do `medir.sh` de cada execução, sem edição.
+
+O artigo (`artigo/artigo.md`) e as ideias pesquisadas e não testadas (`proximos-testes.md`) estão em preparação.
+
+As instruções originais para instalar, rodar e medir a aplicação continuam abaixo, sem alteração.
+
 ## Prazo e entrega
 
 - **Prazo e entregas:** estão no enunciado enviado na largada
