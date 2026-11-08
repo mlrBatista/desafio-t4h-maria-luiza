@@ -1,0 +1,17 @@
+Medição: 06-resumo-vendas-dia
+Carga: 20 usuários virtuais por 60s
+
+Requisições:        3108
+Requisições/s:      51.06
+Tempo de resposta:  mediana 215.6 ms | p95 1103.8 ms | p99 2404.7 ms
+Erros:              0.00%
+
+Por rota:
+rota                  req       mediana       p95           p99           erros   
+cliente               804       188.6 ms      303.7 ms      394.0 ms      0.0%    
+cliente-por-email     448       194.4 ms      394.2 ms      498.8 ms      0.0%    
+pedidos-do-cliente    650       499.1 ms      907.4 ms      1043.6 ms     0.0%    
+pedidos-por-status    434       907.2 ms      2593.8 ms     3176.7 ms     0.0%    
+busca-produtos        474       204.8 ms      396.2 ms      490.3 ms      0.0%    
+vendas-por-dia        244       188.0 ms      302.4 ms      395.3 ms      0.0%    
+top-produtos          54        192.7 ms      302.0 ms      310.2 ms      0.0%    
