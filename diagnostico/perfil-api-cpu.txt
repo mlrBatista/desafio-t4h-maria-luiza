@@ -1,0 +1,42 @@
+# Perfil de CPU da API (node --cpu-prof) durante a carga, código do commit 7cc5a98 (mudança 04 aplicada).
+# Condições: 20 VUs, 60 s, semente 42, sem aquecimento, API com limite de 0.5 CPU. O profiler adiciona sobrecarga: os tempos NÃO são comparáveis com o medir.sh, só a distribuição relativa vale.
+# Percentuais sobre o tempo ativo da CPU (exclui (idle)). 'self' = tempo gasto na própria função, sem as chamadas que ela faz.
+# rotas.js:161 é o manipulador anônimo de GET /relatorios/vendas-por-dia.
+
+Duração amostrada: 65.81 s | ocioso (idle): 14.95 s | ativo: 50.86 s
+Tempo próprio (self) por função, em % do tempo ATIVO da CPU:
+ 27.4%   13.91 s  (garbage collector)  (nativo)
+ 17.3%    8.79 s  (anônima)  src/rotas.js:161
+  6.2%    3.13 s  parseDate  node_modules/postgres-date/index.js:8
+  4.1%    2.10 s  timeZoneOffset  node_modules/postgres-date/index.js:88
+  3.5%    1.76 s  slice  node:buffer:633
+  3.4%    1.72 s  (program)  (nativo)
+  3.3%    1.69 s  parseRow  node_modules/pg/lib/result.js:63
+  3.2%    1.64 s  parseDataRowMessage  node_modules/pg-protocol/dist/parser.js:228
+  2.3%    1.18 s  utf8Slice  (nativo)
+  1.8%    0.93 s  emit  node:events:466
+  1.5%    0.77 s  writeBuffer  (nativo)
+  1.3%    0.66 s  consoleCall  (nativo)
+  1.0%    0.53 s  writev  (nativo)
+  1.0%    0.51 s  parseInteger  node_modules/pg-types/lib/textParsers.js:109
+  1.0%    0.49 s  res.json  src/server.js:10
+  0.9%    0.48 s  addRow  node_modules/pg/lib/result.js:77
+  0.8%    0.42 s  handlePacket  node_modules/pg-protocol/dist/parser.js:91
+  0.7%    0.33 s  compileForInternalLoader  node:internal/bootstrap/realm:383
+  0.6%    0.32 s  runMicrotasks  (nativo)
+  0.6%    0.31 s  wrapSafe  node:internal/modules/cjs/loader:1347
+  0.6%    0.29 s  stringify  node_modules/express/lib/response.js:1155
+  0.6%    0.28 s  parse  node_modules/pg-protocol/dist/parser.js:26
+  0.5%    0.24 s  processTicksAndRejections  node:internal/process/task_queues:67
+  0.5%    0.24 s  RegExp: (\d{1,})-(\d{2})-(\d{2}) (\d{2}):(\d{2}):(\d{2})(\.\d{1,})?.*?( BC)?$  (nativo)
+  0.4%    0.23 s  _handleDataRow  node_modules/pg/lib/client.js:364
+  0.4%    0.18 s  end  node:_http_outgoing:1030
+  0.3%    0.17 s  onStreamRead  node:internal/stream_base_commons:168
+  0.3%    0.13 s  flush  node_modules/pg-protocol/dist/buffer-writer.js:100
+  0.3%    0.13 s  _copyActual  node:buffer:239
+  0.2%    0.12 s  writeUtf8String  (nativo)
+
+Por origem (% do tempo ativo):
+ 19.1%  código da aplicação (src/)
+ 26.0%  node_modules/
+ 54.9%  node:internal / nativo
