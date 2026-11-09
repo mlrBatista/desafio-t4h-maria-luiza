@@ -32,3 +32,5 @@ status=pendente&pagina=1000
 status=pendente&pagina=20000
 status=pago&pagina=0
 status=invalido&pagina=1
+# Comparação byte a byte de GET /pedidos: ANTES (SELECT *, índice antigo, mudança 06) x DEPOIS DE APLICAR (SELECT 4 colunas + índice cobrindo no banco recriado, mudança 07).
+respostas comparadas: 22 | iguais: 22 | diferentes: 0

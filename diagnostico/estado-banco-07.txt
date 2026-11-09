@@ -1,0 +1,95 @@
+# Estado do banco depois de aplicar a mudança 07 (down -v + up --build + autovacuum nas 4 tabelas), ANTES de qualquer medição.
+# Commit: 06e6893 | 2026-11-09 19:55:08 -0300
+
+##### idx_scan do idx_pedidos_criado_em_dia ANTES das medições (banco recriado, contadores zerados pelo down -v)
+          indice           | idx_scan | idx_tup_read | idx_tup_fetch 
+---------------------------+----------+--------------+---------------
+ idx_pedidos_criado_em_dia |        0 |            0 |             0
+(1 row)
+
+##### Tamanho do índice novo e dos demais índices de pedidos (pg_relation_size)
+                indice                 |  bytes   | tamanho 
+---------------------------------------+----------+---------
+ idx_pedidos_status_criado_em_cobrindo | 22118400 | 21 MB
+ pedidos_pkey                          | 11255808 | 11 MB
+ idx_pedidos_cliente_id                |  5857280 | 5720 kB
+ idx_pedidos_criado_em_dia             |  3637248 | 3552 kB
+(4 rows)
+
+##### Índices de pedidos (esperado: sem idx_pedidos_status_criado_em, com idx_pedidos_status_criado_em_cobrindo)
+               indexname               
+---------------------------------------
+ idx_pedidos_cliente_id
+ idx_pedidos_criado_em_dia
+ idx_pedidos_status_criado_em_cobrindo
+ pedidos_pkey
+(4 rows)
+
+##### Mapa de visibilidade de pedidos
+ relpages | relallvisible 
+----------+---------------
+    20834 |         20834
+(1 row)
+
+##### EXPLAIN da consulta da página com o índice novo (pago 1000)
+                                                                               QUERY PLAN                                                                               
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=781.79..782.57 rows=20 width=22) (actual time=5.209..5.216 rows=20 loops=1)
+   Buffers: shared hit=102
+   ->  Index Only Scan using idx_pedidos_status_criado_em_cobrindo on pedidos  (cost=0.42..11743.10 rows=300267 width=22) (actual time=0.042..4.112 rows=20000 loops=1)
+         Index Cond: (status = 'pago'::text)
+         Heap Fetches: 0
+         Buffers: shared hit=102
+ Planning:
+   Buffers: shared hit=69
+ Planning Time: 0.277 ms
+ Execution Time: 5.240 ms
+(10 rows)
+
+##### EXPLAIN da consulta da página com o índice novo (cancelado 1000)
+                                                                              QUERY PLAN                                                                              
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=781.92..782.70 rows=20 width=22) (actual time=6.171..6.177 rows=20 loops=1)
+   Buffers: shared hit=124
+   ->  Index Only Scan using idx_pedidos_status_criado_em_cobrindo on pedidos  (cost=0.42..1947.62 rows=49783 width=22) (actual time=0.058..5.040 rows=20000 loops=1)
+         Index Cond: (status = 'cancelado'::text)
+         Heap Fetches: 0
+         Buffers: shared hit=124
+ Planning Time: 0.109 ms
+ Execution Time: 6.198 ms
+(8 rows)
+
+##### EXPLAIN da consulta da página com o índice novo (pendente 1000)
+                                                                             QUERY PLAN                                                                              
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=784.54..785.33 rows=20 width=22) (actual time=4.917..4.921 rows=20 loops=1)
+   Buffers: shared hit=124
+   ->  Index Only Scan using idx_pedidos_status_criado_em_cobrindo on pedidos  (cost=0.42..975.00 rows=24833 width=22) (actual time=0.045..3.908 rows=20000 loops=1)
+         Index Cond: (status = 'pendente'::text)
+         Heap Fetches: 0
+         Buffers: shared hit=124
+ Planning Time: 0.084 ms
+ Execution Time: 4.937 ms
+(8 rows)
+
+##### EXPLAIN da contagem com o índice novo (pago)
+                                                                                         QUERY PLAN                                                                                          
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Finalize Aggregate  (cost=11304.53..11304.54 rows=1 width=8) (actual time=57.947..63.908 rows=1 loops=1)
+   Buffers: shared hit=1484
+   ->  Gather  (cost=11304.32..11304.53 rows=2 width=8) (actual time=57.635..63.893 rows=3 loops=1)
+         Workers Planned: 2
+         Workers Launched: 2
+         Buffers: shared hit=1484
+         ->  Partial Aggregate  (cost=10304.32..10304.33 rows=1 width=8) (actual time=51.262..51.263 rows=1 loops=3)
+               Buffers: shared hit=1484
+               ->  Parallel Index Only Scan using idx_pedidos_status_criado_em_cobrindo on pedidos  (cost=0.42..9991.54 rows=125111 width=0) (actual time=0.093..37.882 rows=100000 loops=3)
+                     Index Cond: (status = 'pago'::text)
+                     Heap Fetches: 0
+                     Buffers: shared hit=1484
+ Planning:
+   Buffers: shared hit=6
+ Planning Time: 0.150 ms
+ Execution Time: 63.955 ms
+(16 rows)
+
