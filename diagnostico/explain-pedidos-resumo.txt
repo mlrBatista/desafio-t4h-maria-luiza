@@ -1,0 +1,56 @@
+# Resumo derivado de diagnostico/explain-pedidos.txt (gerado por script a partir do arquivo; nenhum número foi digitado).
+# Tempos em ms (Execution Time) das 3 execuções, na ordem. Banco ocioso, consultas isoladas, sem carga.
+
+== status = pago ==
+ATUAL contagem           3 execuções: 211.033 | 96.187 | 105.734 ms | mediana 105.734 ms
+                         plano: Parallel Index Only Scan idx_pedidos_status_criado_em | Heap Fetches: 0
+ATUAL pagina 500         3 execuções: 863.892 | 6.689 | 7.213 ms | mediana 7.213 ms
+                         plano: Index Scan idx_pedidos_status_criado_em
+ATUAL pagina 1000        3 execuções: 610.039 | 16.399 | 16.504 ms | mediana 16.504 ms
+                         plano: Index Scan idx_pedidos_status_criado_em
+COBRINDO pagina 500      3 execuções: 2.184 | 1.879 | 1.857 ms | mediana 1.879 ms
+                         plano: Index Only Scan idx_tmp_cobrindo | Heap Fetches: 0
+COBRINDO pagina 1000     3 execuções: 3.764 | 3.535 | 3.569 ms | mediana 3.569 ms
+                         plano: Index Only Scan idx_tmp_cobrindo | Heap Fetches: 0
+
+== status = entregue ==
+ATUAL contagem           3 execuções: 43.764 | 29.288 | 29.012 ms | mediana 29.288 ms
+                         plano: Index Only Scan idx_pedidos_status_criado_em | Heap Fetches: 0
+ATUAL pagina 500         3 execuções: 217.732 | 7.743 | 7.860 ms | mediana 7.860 ms
+                         plano: Index Scan idx_pedidos_status_criado_em
+ATUAL pagina 1000        3 execuções: 883.855 | 15.144 | 18.671 ms | mediana 18.671 ms
+                         plano: Index Scan idx_pedidos_status_criado_em
+COBRINDO pagina 500      3 execuções: 1.956 | 1.870 | 1.908 ms | mediana 1.908 ms
+                         plano: Index Only Scan idx_tmp_cobrindo | Heap Fetches: 0
+COBRINDO pagina 1000     3 execuções: 3.804 | 3.582 | 3.606 ms | mediana 3.606 ms
+                         plano: Index Only Scan idx_tmp_cobrindo | Heap Fetches: 0
+
+== status = cancelado ==
+ATUAL contagem           3 execuções: 23.528 | 15.024 | 23.303 ms | mediana 23.303 ms
+                         plano: Index Only Scan idx_pedidos_status_criado_em | Heap Fetches: 0
+ATUAL pagina 500         3 execuções: 496.008 | 7.300 | 7.857 ms | mediana 7.857 ms
+                         plano: Index Scan idx_pedidos_status_criado_em
+ATUAL pagina 1000        3 execuções: 1037.155 | 369.886 | 328.285 ms | mediana 369.886 ms
+                         plano: Parallel Bitmap Heap Scan pedidos + Bitmap Index Scan idx_pedidos_status_criado_em
+COBRINDO pagina 500      3 execuções: 1.950 | 1.943 | 1.830 ms | mediana 1.943 ms
+                         plano: Index Only Scan idx_tmp_cobrindo | Heap Fetches: 0
+COBRINDO pagina 1000     3 execuções: 3.725 | 3.621 | 3.625 ms | mediana 3.625 ms
+                         plano: Index Only Scan idx_tmp_cobrindo | Heap Fetches: 0
+
+== status = pendente ==
+ATUAL contagem           3 execuções: 8.434 | 51.414 | 8.581 ms | mediana 8.581 ms
+                         plano: Index Only Scan idx_pedidos_status_criado_em | Heap Fetches: 0
+ATUAL pagina 500         3 execuções: 26.708 | 10.155 | 12.629 ms | mediana 12.629 ms
+                         plano: Index Scan idx_pedidos_status_criado_em
+ATUAL pagina 1000        3 execuções: 240.876 | 319.152 | 413.140 ms | mediana 319.152 ms
+                         plano: Parallel Bitmap Heap Scan pedidos + Bitmap Index Scan idx_pedidos_status_criado_em
+COBRINDO pagina 500      3 execuções: 2.126 | 1.949 | 1.895 ms | mediana 1.949 ms
+                         plano: Index Only Scan idx_tmp_cobrindo | Heap Fetches: 0
+COBRINDO pagina 1000     3 execuções: 3.738 | 3.671 | 3.804 ms | mediana 3.738 ms
+                         plano: Index Only Scan idx_tmp_cobrindo | Heap Fetches: 0
+
+== idx_pedidos_criado_em_dia (lido antes dos EXPLAIN) ==
+          indice           | idx_scan | idx_tup_read | idx_tup_fetch 
+---------------------------+----------+--------------+---------------
+ idx_pedidos_criado_em_dia |     1652 |      7100513 |             0
+(1 row)
