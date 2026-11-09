@@ -13,7 +13,7 @@ Registro de cada mudança aplicada na aplicação, com a hipótese, a fonte da i
 ### Qual "antes" foi usado
 
 - **Mudanças 01 e 02:** o antes é a medição anterior (linha de base e 01-pool), feita na mesma máquina nos dias 03 e 04/11.
-- **Mudanças 03 em diante:** o antes é um **controle medido no mesmo dia, logo antes ou logo depois da mudança**, com o código do commit anterior. Motivo: em 07/11, a mesma versão do código mediu 5.96 req/s numa série e 8.60 req/s noutra, com ~40 minutos de diferença, e rotas que a mudança nem tocava ficaram ~3x mais lentas. A máquina (Windows + WSL2, reiniciada naquele dia) variou mais do que o efeito que queríamos medir. Comparar com uma medição de outro dia misturaria o efeito do código com o da máquina. Desde a 04, o controle é medido também **no mesmo banco**, depois do `down -v`, para que a única diferença seja o código.
+- **Mudanças 03 em diante:** o antes é um **controle medido no mesmo dia, logo antes ou logo depois da mudança**, com o código do commit anterior. Motivo: em 07/11, a mesma versão do código mediu 5.96 req/s numa série e 8.60 req/s noutra, com ~40 minutos de diferença, e rotas que a mudança nem tocava ficaram ~3x mais lentas. A máquina (Windows + WSL2, reiniciada naquele dia) variou mais do que o efeito que queríamos medir. Comparar com uma medição de outro dia misturaria o efeito do código com o da máquina. Desde a 04, o controle é medido também **no mesmo banco**, depois do `down -v`, para que a única diferença seja o código. Desde a 07, o controle é medido **antes e depois** da mudança (desenho A-B-A): se os dois controles derem parecido, a máquina ficou estável durante todo o teste e a ordem das séries não favoreceu nenhum lado.
 
 ## Resumo
 
@@ -25,6 +25,7 @@ Registro de cada mudança aplicada na aplicação, com a hipótese, a fonte da i
 | 04 | Materialized view para `top-produtos` | Aplicada e medida | 03-controle-hoje2 (controle) | 8.27 → 22.06 | 8213.5 → 2312.2 | banco 95.2% → 65.0%; API 23.9% → 46.6% | maior ganho; o gargalo passou para a API |
 | 05 | `vendas-por-dia` agregado no SQL | Aplicada, sem ganho de vazão | 05-controle (controle) | 26.59 → 27.07 | 1977.8 → 1812.0 | banco 65.8% → 99.3%; API 46.8% → 11.9% | tirou o trabalho da API; o gargalo voltou para o banco |
 | 06 | Materialized view para `vendas-por-dia` | Aplicada e medida | 06-controle (controle) | 29.29 → 53.61 | 1803.0 → 1110.2 | banco 99.7% → 100.2%; API 12.8% → 20.4% | ~1,8x a vazão com a mesma CPU do banco; todas as rotas mais rápidas |
+| 07 | Índice cobrindo + `SELECT` das 4 colunas em `/pedidos` | Aplicada e medida | 07-controle (controle A-B-A) | 51.34 → 81.60 | 1128.3 → 699.0 | banco 97.9% → 97.9%; API 18.7% → 25.2% | ~1,6x a vazão; os dois controles iguais (51.34 e 52.25), então o ganho é da mudança |
 
 ## 01 · Pool de conexões
 
@@ -185,6 +186,51 @@ Registro de cada mudança aplicada na aplicação, com a hipótese, a fonte da i
 - **Conclusão:** ~1,8x mais requisições/s, e as faixas das 3 execuções não se sobrepõem. `vendas-por-dia` ficou ~7x mais rápida, e todas as outras rotas também melhoraram, porque cada chamada da rota passou a custar quase nada ao banco. O banco continua em ~100% de CPU, mas agora entrega quase o dobro de requisições com o mesmo recurso. A API subiu (pico de ~41% contra um limite de 50%) e é o próximo ponto a vigiar. A memória média do banco caiu, e não sabemos explicar por quê. Custo em disco: 104 kB da view mais 32 kB do índice, num banco de 361 MB ([diagnostico/tamanho-vendas-por-dia-mv.txt](diagnostico/tamanho-vendas-por-dia-mv.txt)). O custo real é o mesmo da 04: o dado é uma foto da criação do banco e precisa de `REFRESH` se mudar, o que a carga, só de leitura, não mede.
 - **Incidente registrado:** durante o diagnóstico do índice, a primeira versão do script apagou o `idx_pedidos_criado_em_dia` fora de transação (um erro de sintaxe engoliu o `BEGIN`). O índice foi recriado com a mesma definição do `03-indices.sql`, o diagnóstico foi refeito com `ON_ERROR_STOP` e nenhuma medição foi feita nesse estado. O banco foi recriado do zero antes de medir a 06.
 - **Consequência:** o `idx_pedidos_criado_em_dia` não serve mais a nenhuma rota. A remoção fica para uma mudança própria.
+
+## 07 · Índice cobrindo e `SELECT` das 4 colunas em `GET /pedidos`
+
+- **Commit:** `06e6893` (mudança, [banco/06-pedidos-indice-cobrindo.sql](banco/06-pedidos-indice-cobrindo.sql) e [api/src/rotas.js](api/src/rotas.js)) · diagnósticos em `4f1f917`, `01af8ee`, `9b6dde1` e `d6d3544` · resultados em `24e71cc` (controle), `ffbc4f3` (mudança) e `99bcb9d` (controle depois).
+- **O que mudou:** duas alterações num commit só, porque formam uma única hipótese.
+  - **No banco:** o índice `idx_pedidos_status_criado_em` (criado na 02) foi substituído por `idx_pedidos_status_criado_em_cobrindo`, com a mesma chave `(status, criado_em DESC, id DESC)` e o `cliente_id` em `INCLUDE`.
+  - **Na API:** a consulta da página trocou `SELECT *` por `SELECT id, cliente_id, status, criado_em`, as 4 colunas que a resposta usa. A contagem e o resto da rota não mudaram.
+  - Com as duas juntas, todas as colunas da consulta estão no índice e o banco monta a página sem visitar a tabela (Index Only Scan). Separadas, nenhuma das duas evita a visita: com `SELECT *` faltam colunas no índice, e sem o `INCLUDE` falta o `cliente_id`.
+- **Hipótese:** a consulta da página usa `OFFSET` e, com `SELECT *`, visita a tabela para cada linha percorrida; em `cancelado` e `pendente`, as páginas fundas ainda trocam para Parallel Bitmap Heap Scan com ordenação em disco. Com o índice cobrindo e só as 4 colunas, todas as páginas devem virar Index Only Scan, baixando o tempo de `/pedidos` e liberando CPU do banco para as outras rotas.
+- **Evidência que originou a ideia:** diagnóstico da rota com o banco ocioso, 3 execuções de cada consulta para os 4 status ([diagnostico/explain-pedidos.txt](diagnostico/explain-pedidos.txt), resumo em [diagnostico/explain-pedidos-resumo.txt](diagnostico/explain-pedidos-resumo.txt)). Nenhuma das duas consultas da rota domina sempre: a contagem pesa em `pago` (mediana de 105.734 ms) e em `entregue` (29.288 ms); a página 1000 pesa em `cancelado` (369.886 ms) e em `pendente` (319.152 ms), onde o plano troca para Parallel Bitmap Heap Scan com `Sort Method: external merge` em disco. Na página 1000 de `pago`, a consulta atual lia 20101 páginas de 8 kB; com o índice cobrindo, testado dentro de `BEGIN ... ROLLBACK`, leu 102, sem visitar a tabela (`Heap Fetches: 0`), em ~1,9 ms na página 500 e ~3,6 ms na 1000 nos 4 status. O índice cobrindo não resolve a contagem.
+- **Fontes:**
+  - PostgreSQL 16, *Index-Only Scans and Covering Indexes*: um index-only scan responde à consulta "from an index alone without any heap access"; para isso, a página da tabela precisa estar marcada como visível no *visibility map*; colunas em `INCLUDE` ficam guardadas no índice sem fazer parte da chave de busca, e a documentação recomenda cautela porque elas aumentam o tamanho do índice (https://www.postgresql.org/docs/16/indexes-index-only-scans.html).
+  - PostgreSQL 16, *Indexes and ORDER BY*, já citada na 02 (https://www.postgresql.org/docs/16/indexes-ordering.html).
+- **Verificação extra do contrato:** 22 respostas de `/pedidos` (4 status nas páginas 1, 2, 500, 1000 e além do fim, mais `pagina=0` e status inválido) idênticas byte a byte antes e depois, tanto antes de commitar quanto depois de aplicar no banco recriado ([diagnostico/comparacao-rota-pedidos.txt](diagnostico/comparacao-rota-pedidos.txt)).
+- **Estado do banco antes de medir** ([diagnostico/estado-banco-07.txt](diagnostico/estado-banco-07.txt)): banco recriado com `down -v`, autovacuum já executado nas 4 tabelas, mapa de visibilidade completo em `pedidos` (`relallvisible` 20834 de 20834), índice antigo ausente e índice novo presente. Com o índice novo, a página 1000 levou 5.240 ms em `pago`, 6.198 ms em `cancelado` e 4.937 ms em `pendente`, todas com Index Only Scan.
+- **Condições da medição:** desenho A-B-A no mesmo banco e em sequência: controle (código anterior), mudança, controle de novo. O código da API foi conferido dentro do container antes de cada série. Antes da primeira série, como os containers tinham acabado de reiniciar, rodou-se uma carga de aquecimento de 60 s sem gravar resultados (não gerou pasta em `resultados/`).
+- **Ressalva sobre o controle:** os dois controles rodam o código antigo (`SELECT *`) no banco já recriado com o índice cobrindo, porque o índice antigo não existe mais nesse banco. Com `SELECT *`, o índice novo se comporta como o antigo: mesma chave, e a consulta precisa ir à tabela buscar as colunas que o índice não tem. Recriar o banco com o índice antigo só para o controle colocaria uma segunda diferença (outro banco, outro cache) entre as séries.
+- **Antes (controle):** [07-controle](resultados/20261109-195639-07-controle), [2](resultados/20261109-195806-07-controle), [3](resultados/20261109-195933-07-controle).
+- **Depois:** [07-indice-cobrindo](resultados/20261109-200117-07-indice-cobrindo), [2](resultados/20261109-200241-07-indice-cobrindo), [3](resultados/20261109-200404-07-indice-cobrindo).
+- **Controle depois:** [07-controle-depois](resultados/20261109-200547-07-controle-depois), [2](resultados/20261109-200713-07-controle-depois), [3](resultados/20261109-200839-07-controle-depois).
+
+| Métrica (mediana das 3) | Controle | Mudança | Controle depois |
+|---|---|---|---|
+| Requisições/s | 51.34 (execuções: 47.31, 51.34, 52.98) | 81.60 (execuções: 74.28, 85.52, 81.60) | 52.25 (execuções: 52.17, 54.32, 52.25) |
+| Mediana geral | 205.6 ms | 190.3 ms | 208.7 ms |
+| p95 | 1128.3 ms | 699.0 ms | 1197.8 ms |
+| p99 | 2327.6 ms | 1177.4 ms | 2316.4 ms |
+| CPU / memória do banco | 97.9% / 426.7 MiB | 97.9% / 371.7 MiB | 96.5% / 436.9 MiB |
+| CPU / memória da API | 18.7% / 27.3 MiB | 25.2% / 27.6 MiB | 19.1% / 26.2 MiB |
+| Pico de CPU da API (mediana dos máximos do `recursos.csv`) | 35.78% | 40.17% | 35.73% |
+
+| Rota (mediana das medianas) | Controle | Mudança | Controle depois |
+|---|---|---|---|
+| cliente | 188.2 ms | 106.8 ms | 190.0 ms |
+| cliente-por-email | 187.7 ms | 106.2 ms | 188.9 ms |
+| pedidos-do-cliente | 511.4 ms | 301.3 ms | 466.2 ms |
+| pedidos-por-status | 908.5 ms | 503.0 ms | 976.5 ms |
+| busca-produtos | 202.7 ms | 189.1 ms | 207.6 ms |
+| vendas-por-dia | 187.4 ms | 107.2 ms | 188.5 ms |
+| top-produtos | 189.3 ms | 112.1 ms | 192.0 ms |
+
+- **Custo:** o índice novo tem 22118400 bytes (21 MB), o mesmo tamanho do índice que ele substituiu ([diagnostico/estado-banco-07.txt](diagnostico/estado-banco-07.txt)). O `cliente_id` em `INCLUDE` não aumentou o tamanho medido; o motivo não foi investigado.
+- **Conclusão:** ~1,6x mais requisições/s (51.34 → 81.60) e p95 ~38% menor. Os dois controles ficaram praticamente iguais (51.34 e 52.25 req/s; p95 de 1128.3 e 1197.8 ms), então a máquina ficou estável durante as 9 execuções e o ganho é da mudança. Como na 06, todas as rotas ficaram mais rápidas, não só `/pedidos`: o banco segue a ~98% de CPU, mas gasta menos por requisição e atende ~60% mais. A memória média do banco caiu (426.7 → 371.7 MiB); a hipótese é que menos páginas da tabela passam a ser carregadas, o que não foi verificado. A API subiu de 18.7% para 25.2% de CPU média, e uma das execuções da mudança teve pico de 51.99% no `recursos.csv`, acima do limite de 50% (0.5 CPU): a API volta a se aproximar do limite.
+- **O que continua igual:** a contagem por status, que ainda soma todas as linhas do status a cada requisição. Com o índice novo, a contagem de `pago` levou 63.955 ms com o banco ocioso ([diagnostico/estado-banco-07.txt](diagnostico/estado-banco-07.txt)).
+- **Índice sem uso confirmado:** o `idx_pedidos_criado_em_dia` teve `idx_scan` 0 antes e 0 depois das 9 execuções, com `idx_tup_read` 0 ([diagnostico/idx-scan-depois-07.txt](diagnostico/idx-scan-depois-07.txt)). Nenhuma rota o usa; a remoção fica para uma mudança própria.
 
 ## Séries que não entram nas comparações
 
