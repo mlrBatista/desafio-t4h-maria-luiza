@@ -1,0 +1,11 @@
+# idx_scan do idx_pedidos_criado_em_dia DEPOIS das medições da mudança 07 (07-controle, 07-indice-cobrindo, 07-controle-depois), 2026-11-09 20:10:28 -0300.
+# Antes das medições o valor era 0 (diagnostico/estado-banco-07.txt). Contadores zerados pelo down -v. Inclui também as verificações de contrato.
+
+                indice                 | idx_scan | idx_tup_read | idx_tup_fetch 
+---------------------------------------+----------+--------------+---------------
+ pedidos_pkey                          |  1500004 |      1500004 |       1500004
+ idx_pedidos_status_criado_em_cobrindo |    15965 |    927023937 |      30322020
+ idx_pedidos_cliente_id                |     8984 |        44920 |         44920
+ idx_pedidos_criado_em_dia             |        0 |            0 |             0
+(4 rows)
+
