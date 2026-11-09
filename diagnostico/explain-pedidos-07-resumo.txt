@@ -1,0 +1,51 @@
+# Resumo derivado de diagnostico/explain-pedidos-07.txt (gerado por script; nenhum número foi digitado).
+# Tempo = Execution Time em ms (3 execuções, na ordem; mediana = valor do meio). Buffers = shared hit + read do plano inteiro (páginas de 8 kB lidas), mínimo e máximo das 3 execuções.
+# Banco ocioso, consultas isoladas, sem carga.
+
+== status = pago ==
+NOVA pagina 500        tempos: 5.056 | 3.498 | 4.145 ms | mediana 4.145 ms | Buffers 53
+                       plano: Index Only Scan idx_pedidos_status_criado_em_cobrindo | Heap Fetches: 0
+NOVA pagina 1000       tempos: 3.989 | 4.629 | 6.482 ms | mediana 4.629 ms | Buffers 102
+                       plano: Index Only Scan idx_pedidos_status_criado_em_cobrindo | Heap Fetches: 0
+ANTIGA pagina 500      tempos: 12.709 | 5.339 | 6.145 ms | mediana 6.145 ms | Buffers 10052
+                       plano: Index Scan idx_pedidos_status_criado_em_cobrindo
+ANTIGA pagina 1000     tempos: 20.622 | 16.093 | 17.539 ms | mediana 17.539 ms | Buffers 20101
+                       plano: Index Scan idx_pedidos_status_criado_em_cobrindo
+CONTAGEM contagem      tempos: 192.221 | 205.306 | 270.438 ms | mediana 205.306 ms | Buffers 1484 a 1485
+                       plano: Parallel Index Only Scan idx_pedidos_status_criado_em_cobrindo | Heap Fetches: 0
+
+== status = entregue ==
+NOVA pagina 500        tempos: 7.064 | 4.030 | 4.820 ms | mediana 4.820 ms | Buffers 64
+                       plano: Index Only Scan idx_pedidos_status_criado_em_cobrindo | Heap Fetches: 0
+NOVA pagina 1000       tempos: 4.464 | 4.552 | 5.729 ms | mediana 4.552 ms | Buffers 124
+                       plano: Index Only Scan idx_pedidos_status_criado_em_cobrindo | Heap Fetches: 0
+ANTIGA pagina 500      tempos: 14.946 | 7.519 | 8.959 ms | mediana 8.959 ms | Buffers 10063
+                       plano: Index Scan idx_pedidos_status_criado_em_cobrindo
+ANTIGA pagina 1000     tempos: 93.468 | 15.124 | 15.004 ms | mediana 15.124 ms | Buffers 20123
+                       plano: Index Scan idx_pedidos_status_criado_em_cobrindo
+CONTAGEM contagem      tempos: 27.754 | 25.350 | 27.076 ms | mediana 27.076 ms | Buffers 757
+                       plano: Index Only Scan idx_pedidos_status_criado_em_cobrindo | Heap Fetches: 0
+
+== status = cancelado ==
+NOVA pagina 500        tempos: 2.901 | 3.022 | 2.291 ms | mediana 2.901 ms | Buffers 64
+                       plano: Index Only Scan idx_pedidos_status_criado_em_cobrindo | Heap Fetches: 0
+NOVA pagina 1000       tempos: 5.045 | 6.545 | 3.863 ms | mediana 5.045 ms | Buffers 124
+                       plano: Index Only Scan idx_pedidos_status_criado_em_cobrindo | Heap Fetches: 0
+ANTIGA pagina 500      tempos: 64.974 | 7.456 | 7.964 ms | mediana 7.964 ms | Buffers 10063
+                       plano: Index Scan idx_pedidos_status_criado_em_cobrindo
+ANTIGA pagina 1000     tempos: 623.862 | 596.500 | 1007.106 ms | mediana 623.862 ms | Buffers 21166
+                       plano: Parallel Bitmap Heap Scan pedidos + Bitmap Index Scan idx_pedidos_status_criado_em_cobrindo
+CONTAGEM contagem      tempos: 18.077 | 15.250 | 12.598 ms | mediana 15.250 ms | Buffers 305
+                       plano: Index Only Scan idx_pedidos_status_criado_em_cobrindo | Heap Fetches: 0
+
+== status = pendente ==
+NOVA pagina 500        tempos: 6.187 | 2.605 | 1.780 ms | mediana 2.605 ms | Buffers 64
+                       plano: Index Only Scan idx_pedidos_status_criado_em_cobrindo | Heap Fetches: 0
+NOVA pagina 1000       tempos: 7.213 | 7.186 | 8.478 ms | mediana 7.213 ms | Buffers 124
+                       plano: Index Only Scan idx_pedidos_status_criado_em_cobrindo | Heap Fetches: 0
+ANTIGA pagina 500      tempos: 127.506 | 14.922 | 14.469 ms | mediana 14.922 ms | Buffers 10063
+                       plano: Index Scan idx_pedidos_status_criado_em_cobrindo
+ANTIGA pagina 1000     tempos: 230.232 | 322.110 | 472.216 ms | mediana 322.110 ms | Buffers 20181
+                       plano: Parallel Bitmap Heap Scan pedidos + Bitmap Index Scan idx_pedidos_status_criado_em_cobrindo
+CONTAGEM contagem      tempos: 10.331 | 8.081 | 11.850 ms | mediana 10.331 ms | Buffers 154
+                       plano: Index Only Scan idx_pedidos_status_criado_em_cobrindo | Heap Fetches: 0

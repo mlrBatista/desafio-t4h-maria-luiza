@@ -1,0 +1,887 @@
+# Diagnóstico só de leitura de GET /pedidos com o índice novo da mudança 07. Script: diagnostico/explain-pedidos-07.sql (gerado por script, rodado com psql -f).
+# Condições: banco ocioso (consultas ativas fora a minha: 0), nenhuma medição rodando, árvore do git limpa.
+# Commit atual: 08c82de | Data e hora: 2026-11-09 20:25:25 -0300 | Servidor do banco iniciado em: 2026-11-09 22:53:58.949501+00.
+# Tempos de consultas isoladas, sem carga: não substituem os números do medir.sh. Nada foi alterado no banco.
+
+##### INDICES de pedidos
+               indexname               
+---------------------------------------
+ idx_pedidos_cliente_id
+ idx_pedidos_criado_em_dia
+ idx_pedidos_status_criado_em_cobrindo
+ pedidos_pkey
+(4 rows)
+
+##### [NOVA] pagina 500 | status=pago | execucao 1
+                                                                               QUERY PLAN                                                                               
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=390.71..391.50 rows=20 width=22) (actual time=3.302..3.309 rows=20 loops=1)
+   Buffers: shared hit=53
+   ->  Index Only Scan using idx_pedidos_status_criado_em_cobrindo on pedidos  (cost=0.42..11743.10 rows=300267 width=22) (actual time=0.165..2.757 rows=10000 loops=1)
+         Index Cond: (status = 'pago'::text)
+         Heap Fetches: 0
+         Buffers: shared hit=53
+ Planning:
+   Buffers: shared hit=137
+ Planning Time: 0.321 ms
+ Execution Time: 5.056 ms
+(10 rows)
+
+##### [NOVA] pagina 500 | status=pago | execucao 2
+                                                                               QUERY PLAN                                                                               
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=390.71..391.50 rows=20 width=22) (actual time=3.467..3.473 rows=20 loops=1)
+   Buffers: shared hit=53
+   ->  Index Only Scan using idx_pedidos_status_criado_em_cobrindo on pedidos  (cost=0.42..11743.10 rows=300267 width=22) (actual time=0.026..2.902 rows=10000 loops=1)
+         Index Cond: (status = 'pago'::text)
+         Heap Fetches: 0
+         Buffers: shared hit=53
+ Planning Time: 0.092 ms
+ Execution Time: 3.498 ms
+(8 rows)
+
+##### [NOVA] pagina 500 | status=pago | execucao 3
+                                                                               QUERY PLAN                                                                               
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=390.71..391.50 rows=20 width=22) (actual time=4.115..4.120 rows=20 loops=1)
+   Buffers: shared hit=53
+   ->  Index Only Scan using idx_pedidos_status_criado_em_cobrindo on pedidos  (cost=0.42..11743.10 rows=300267 width=22) (actual time=0.032..3.452 rows=10000 loops=1)
+         Index Cond: (status = 'pago'::text)
+         Heap Fetches: 0
+         Buffers: shared hit=53
+ Planning Time: 0.134 ms
+ Execution Time: 4.145 ms
+(8 rows)
+
+##### [ANTIGA] pagina 500 | status=pago | execucao 1
+                                                                             QUERY PLAN                                                                              
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=2911.98..2917.82 rows=20 width=299) (actual time=12.671..12.687 rows=20 loops=1)
+   Buffers: shared hit=10052
+   ->  Index Scan using idx_pedidos_status_criado_em_cobrindo on pedidos  (cost=0.42..87600.12 rows=300267 width=299) (actual time=0.040..12.140 rows=10000 loops=1)
+         Index Cond: (status = 'pago'::text)
+         Buffers: shared hit=10052
+ Planning:
+   Buffers: shared hit=3
+ Planning Time: 0.163 ms
+ Execution Time: 12.709 ms
+(9 rows)
+
+##### [ANTIGA] pagina 500 | status=pago | execucao 2
+                                                                             QUERY PLAN                                                                             
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=2911.98..2917.82 rows=20 width=299) (actual time=5.304..5.315 rows=20 loops=1)
+   Buffers: shared hit=10052
+   ->  Index Scan using idx_pedidos_status_criado_em_cobrindo on pedidos  (cost=0.42..87600.12 rows=300267 width=299) (actual time=0.034..4.904 rows=10000 loops=1)
+         Index Cond: (status = 'pago'::text)
+         Buffers: shared hit=10052
+ Planning Time: 0.128 ms
+ Execution Time: 5.339 ms
+(7 rows)
+
+##### [ANTIGA] pagina 500 | status=pago | execucao 3
+                                                                             QUERY PLAN                                                                             
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=2911.98..2917.82 rows=20 width=299) (actual time=6.096..6.119 rows=20 loops=1)
+   Buffers: shared hit=10052
+   ->  Index Scan using idx_pedidos_status_criado_em_cobrindo on pedidos  (cost=0.42..87600.12 rows=300267 width=299) (actual time=0.019..5.631 rows=10000 loops=1)
+         Index Cond: (status = 'pago'::text)
+         Buffers: shared hit=10052
+ Planning Time: 0.085 ms
+ Execution Time: 6.145 ms
+(7 rows)
+
+##### [NOVA] pagina 1000 | status=pago | execucao 1
+                                                                               QUERY PLAN                                                                               
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=781.79..782.57 rows=20 width=22) (actual time=3.967..3.972 rows=20 loops=1)
+   Buffers: shared hit=102
+   ->  Index Only Scan using idx_pedidos_status_criado_em_cobrindo on pedidos  (cost=0.42..11743.10 rows=300267 width=22) (actual time=0.025..3.091 rows=20000 loops=1)
+         Index Cond: (status = 'pago'::text)
+         Heap Fetches: 0
+         Buffers: shared hit=102
+ Planning Time: 0.090 ms
+ Execution Time: 3.989 ms
+(8 rows)
+
+##### [NOVA] pagina 1000 | status=pago | execucao 2
+                                                                               QUERY PLAN                                                                               
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=781.79..782.57 rows=20 width=22) (actual time=4.598..4.604 rows=20 loops=1)
+   Buffers: shared hit=102
+   ->  Index Only Scan using idx_pedidos_status_criado_em_cobrindo on pedidos  (cost=0.42..11743.10 rows=300267 width=22) (actual time=0.031..3.575 rows=20000 loops=1)
+         Index Cond: (status = 'pago'::text)
+         Heap Fetches: 0
+         Buffers: shared hit=102
+ Planning Time: 0.208 ms
+ Execution Time: 4.629 ms
+(8 rows)
+
+##### [NOVA] pagina 1000 | status=pago | execucao 3
+                                                                               QUERY PLAN                                                                               
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=781.79..782.57 rows=20 width=22) (actual time=6.446..6.452 rows=20 loops=1)
+   Buffers: shared hit=102
+   ->  Index Only Scan using idx_pedidos_status_criado_em_cobrindo on pedidos  (cost=0.42..11743.10 rows=300267 width=22) (actual time=0.036..5.203 rows=20000 loops=1)
+         Index Cond: (status = 'pago'::text)
+         Heap Fetches: 0
+         Buffers: shared hit=102
+ Planning Time: 0.120 ms
+ Execution Time: 6.482 ms
+(8 rows)
+
+##### [ANTIGA] pagina 1000 | status=pago | execucao 1
+                                                                             QUERY PLAN                                                                              
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=5829.37..5835.21 rows=20 width=299) (actual time=20.575..20.592 rows=20 loops=1)
+   Buffers: shared hit=20101
+   ->  Index Scan using idx_pedidos_status_criado_em_cobrindo on pedidos  (cost=0.42..87600.12 rows=300267 width=299) (actual time=0.037..19.330 rows=20000 loops=1)
+         Index Cond: (status = 'pago'::text)
+         Buffers: shared hit=20101
+ Planning Time: 0.141 ms
+ Execution Time: 20.622 ms
+(7 rows)
+
+##### [ANTIGA] pagina 1000 | status=pago | execucao 2
+                                                                             QUERY PLAN                                                                              
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=5829.37..5835.21 rows=20 width=299) (actual time=16.043..16.062 rows=20 loops=1)
+   Buffers: shared hit=20101
+   ->  Index Scan using idx_pedidos_status_criado_em_cobrindo on pedidos  (cost=0.42..87600.12 rows=300267 width=299) (actual time=0.036..14.816 rows=20000 loops=1)
+         Index Cond: (status = 'pago'::text)
+         Buffers: shared hit=20101
+ Planning Time: 0.134 ms
+ Execution Time: 16.093 ms
+(7 rows)
+
+##### [ANTIGA] pagina 1000 | status=pago | execucao 3
+                                                                             QUERY PLAN                                                                              
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=5829.37..5835.21 rows=20 width=299) (actual time=17.485..17.500 rows=20 loops=1)
+   Buffers: shared hit=20101
+   ->  Index Scan using idx_pedidos_status_criado_em_cobrindo on pedidos  (cost=0.42..87600.12 rows=300267 width=299) (actual time=0.039..16.125 rows=20000 loops=1)
+         Index Cond: (status = 'pago'::text)
+         Buffers: shared hit=20101
+ Planning Time: 0.415 ms
+ Execution Time: 17.539 ms
+(7 rows)
+
+##### [CONTAGEM] contagem | status=pago | execucao 1
+                                                                                          QUERY PLAN                                                                                          
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Finalize Aggregate  (cost=11304.53..11304.54 rows=1 width=8) (actual time=183.713..192.160 rows=1 loops=1)
+   Buffers: shared hit=1485
+   ->  Gather  (cost=11304.32..11304.53 rows=2 width=8) (actual time=183.343..192.140 rows=3 loops=1)
+         Workers Planned: 2
+         Workers Launched: 2
+         Buffers: shared hit=1485
+         ->  Partial Aggregate  (cost=10304.32..10304.33 rows=1 width=8) (actual time=176.584..176.586 rows=1 loops=3)
+               Buffers: shared hit=1485
+               ->  Parallel Index Only Scan using idx_pedidos_status_criado_em_cobrindo on pedidos  (cost=0.42..9991.54 rows=125111 width=0) (actual time=0.100..127.871 rows=100000 loops=3)
+                     Index Cond: (status = 'pago'::text)
+                     Heap Fetches: 0
+                     Buffers: shared hit=1485
+ Planning:
+   Buffers: shared hit=6
+ Planning Time: 0.169 ms
+ Execution Time: 192.221 ms
+(16 rows)
+
+##### [CONTAGEM] contagem | status=pago | execucao 2
+                                                                                          QUERY PLAN                                                                                          
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Finalize Aggregate  (cost=11304.53..11304.54 rows=1 width=8) (actual time=200.821..205.209 rows=1 loops=1)
+   Buffers: shared hit=1485
+   ->  Gather  (cost=11304.32..11304.53 rows=2 width=8) (actual time=200.560..205.192 rows=3 loops=1)
+         Workers Planned: 2
+         Workers Launched: 2
+         Buffers: shared hit=1485
+         ->  Partial Aggregate  (cost=10304.32..10304.33 rows=1 width=8) (actual time=190.063..190.065 rows=1 loops=3)
+               Buffers: shared hit=1485
+               ->  Parallel Index Only Scan using idx_pedidos_status_criado_em_cobrindo on pedidos  (cost=0.42..9991.54 rows=125111 width=0) (actual time=0.109..155.866 rows=100000 loops=3)
+                     Index Cond: (status = 'pago'::text)
+                     Heap Fetches: 0
+                     Buffers: shared hit=1485
+ Planning Time: 0.215 ms
+ Execution Time: 205.306 ms
+(14 rows)
+
+##### [CONTAGEM] contagem | status=pago | execucao 3
+                                                                                          QUERY PLAN                                                                                          
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Finalize Aggregate  (cost=11304.53..11304.54 rows=1 width=8) (actual time=200.415..270.367 rows=1 loops=1)
+   Buffers: shared hit=1484
+   ->  Gather  (cost=11304.32..11304.53 rows=2 width=8) (actual time=200.085..270.342 rows=3 loops=1)
+         Workers Planned: 2
+         Workers Launched: 2
+         Buffers: shared hit=1484
+         ->  Partial Aggregate  (cost=10304.32..10304.33 rows=1 width=8) (actual time=194.352..194.355 rows=1 loops=3)
+               Buffers: shared hit=1484
+               ->  Parallel Index Only Scan using idx_pedidos_status_criado_em_cobrindo on pedidos  (cost=0.42..9991.54 rows=125111 width=0) (actual time=0.049..140.141 rows=100000 loops=3)
+                     Index Cond: (status = 'pago'::text)
+                     Heap Fetches: 0
+                     Buffers: shared hit=1484
+ Planning Time: 0.135 ms
+ Execution Time: 270.438 ms
+(14 rows)
+
+##### [NOVA] pagina 500 | status=entregue | execucao 1
+                                                                              QUERY PLAN                                                                               
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=390.76..391.54 rows=20 width=22) (actual time=7.015..7.020 rows=20 loops=1)
+   Buffers: shared hit=64
+   ->  Index Only Scan using idx_pedidos_status_criado_em_cobrindo on pedidos  (cost=0.42..4893.97 rows=125117 width=22) (actual time=0.106..5.970 rows=10000 loops=1)
+         Index Cond: (status = 'entregue'::text)
+         Heap Fetches: 0
+         Buffers: shared hit=64
+ Planning Time: 0.217 ms
+ Execution Time: 7.064 ms
+(8 rows)
+
+##### [NOVA] pagina 500 | status=entregue | execucao 2
+                                                                              QUERY PLAN                                                                               
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=390.76..391.54 rows=20 width=22) (actual time=3.918..3.934 rows=20 loops=1)
+   Buffers: shared hit=64
+   ->  Index Only Scan using idx_pedidos_status_criado_em_cobrindo on pedidos  (cost=0.42..4893.97 rows=125117 width=22) (actual time=0.039..3.175 rows=10000 loops=1)
+         Index Cond: (status = 'entregue'::text)
+         Heap Fetches: 0
+         Buffers: shared hit=64
+ Planning Time: 0.132 ms
+ Execution Time: 4.030 ms
+(8 rows)
+
+##### [NOVA] pagina 500 | status=entregue | execucao 3
+                                                                              QUERY PLAN                                                                               
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=390.76..391.54 rows=20 width=22) (actual time=4.764..4.779 rows=20 loops=1)
+   Buffers: shared hit=64
+   ->  Index Only Scan using idx_pedidos_status_criado_em_cobrindo on pedidos  (cost=0.42..4893.97 rows=125117 width=22) (actual time=0.035..3.818 rows=10000 loops=1)
+         Index Cond: (status = 'entregue'::text)
+         Heap Fetches: 0
+         Buffers: shared hit=64
+ Planning Time: 0.160 ms
+ Execution Time: 4.820 ms
+(8 rows)
+
+##### [ANTIGA] pagina 500 | status=entregue | execucao 1
+                                                                             QUERY PLAN                                                                              
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=6380.04..6392.83 rows=20 width=299) (actual time=14.811..14.904 rows=20 loops=1)
+   Buffers: shared hit=10057 read=6
+   ->  Index Scan using idx_pedidos_status_criado_em_cobrindo on pedidos  (cost=0.42..79980.30 rows=125117 width=299) (actual time=0.056..13.843 rows=10000 loops=1)
+         Index Cond: (status = 'entregue'::text)
+         Buffers: shared hit=10057 read=6
+ Planning Time: 0.268 ms
+ Execution Time: 14.946 ms
+(7 rows)
+
+##### [ANTIGA] pagina 500 | status=entregue | execucao 2
+                                                                             QUERY PLAN                                                                             
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=6380.04..6392.83 rows=20 width=299) (actual time=7.392..7.403 rows=20 loops=1)
+   Buffers: shared hit=10063
+   ->  Index Scan using idx_pedidos_status_criado_em_cobrindo on pedidos  (cost=0.42..79980.30 rows=125117 width=299) (actual time=0.066..6.882 rows=10000 loops=1)
+         Index Cond: (status = 'entregue'::text)
+         Buffers: shared hit=10063
+ Planning Time: 0.380 ms
+ Execution Time: 7.519 ms
+(7 rows)
+
+##### [ANTIGA] pagina 500 | status=entregue | execucao 3
+                                                                             QUERY PLAN                                                                             
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=6380.04..6392.83 rows=20 width=299) (actual time=8.925..8.936 rows=20 loops=1)
+   Buffers: shared hit=10063
+   ->  Index Scan using idx_pedidos_status_criado_em_cobrindo on pedidos  (cost=0.42..79980.30 rows=125117 width=299) (actual time=0.021..8.367 rows=10000 loops=1)
+         Index Cond: (status = 'entregue'::text)
+         Buffers: shared hit=10063
+ Planning Time: 0.102 ms
+ Execution Time: 8.959 ms
+(7 rows)
+
+##### [NOVA] pagina 1000 | status=entregue | execucao 1
+                                                                              QUERY PLAN                                                                               
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=781.88..782.66 rows=20 width=22) (actual time=4.437..4.442 rows=20 loops=1)
+   Buffers: shared hit=124
+   ->  Index Only Scan using idx_pedidos_status_criado_em_cobrindo on pedidos  (cost=0.42..4893.97 rows=125117 width=22) (actual time=0.026..3.513 rows=20000 loops=1)
+         Index Cond: (status = 'entregue'::text)
+         Heap Fetches: 0
+         Buffers: shared hit=124
+ Planning Time: 0.151 ms
+ Execution Time: 4.464 ms
+(8 rows)
+
+##### [NOVA] pagina 1000 | status=entregue | execucao 2
+                                                                              QUERY PLAN                                                                               
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=781.88..782.66 rows=20 width=22) (actual time=4.520..4.525 rows=20 loops=1)
+   Buffers: shared hit=124
+   ->  Index Only Scan using idx_pedidos_status_criado_em_cobrindo on pedidos  (cost=0.42..4893.97 rows=125117 width=22) (actual time=0.037..3.624 rows=20000 loops=1)
+         Index Cond: (status = 'entregue'::text)
+         Heap Fetches: 0
+         Buffers: shared hit=124
+ Planning Time: 0.125 ms
+ Execution Time: 4.552 ms
+(8 rows)
+
+##### [NOVA] pagina 1000 | status=entregue | execucao 3
+                                                                              QUERY PLAN                                                                               
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=781.88..782.66 rows=20 width=22) (actual time=5.685..5.694 rows=20 loops=1)
+   Buffers: shared hit=124
+   ->  Index Only Scan using idx_pedidos_status_criado_em_cobrindo on pedidos  (cost=0.42..4893.97 rows=125117 width=22) (actual time=0.035..4.520 rows=20000 loops=1)
+         Index Cond: (status = 'entregue'::text)
+         Heap Fetches: 0
+         Buffers: shared hit=124
+ Planning Time: 0.126 ms
+ Execution Time: 5.729 ms
+(8 rows)
+
+##### [ANTIGA] pagina 1000 | status=entregue | execucao 1
+                                                                             QUERY PLAN                                                                              
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=12772.45..12785.24 rows=20 width=299) (actual time=93.416..93.440 rows=20 loops=1)
+   Buffers: shared hit=19624 read=499
+   ->  Index Scan using idx_pedidos_status_criado_em_cobrindo on pedidos  (cost=0.42..79980.30 rows=125117 width=299) (actual time=0.036..92.259 rows=20000 loops=1)
+         Index Cond: (status = 'entregue'::text)
+         Buffers: shared hit=19624 read=499
+ Planning Time: 0.138 ms
+ Execution Time: 93.468 ms
+(7 rows)
+
+##### [ANTIGA] pagina 1000 | status=entregue | execucao 2
+                                                                             QUERY PLAN                                                                              
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=12772.45..12785.24 rows=20 width=299) (actual time=15.087..15.101 rows=20 loops=1)
+   Buffers: shared hit=20123
+   ->  Index Scan using idx_pedidos_status_criado_em_cobrindo on pedidos  (cost=0.42..79980.30 rows=125117 width=299) (actual time=0.023..13.932 rows=20000 loops=1)
+         Index Cond: (status = 'entregue'::text)
+         Buffers: shared hit=20123
+ Planning Time: 0.121 ms
+ Execution Time: 15.124 ms
+(7 rows)
+
+##### [ANTIGA] pagina 1000 | status=entregue | execucao 3
+                                                                             QUERY PLAN                                                                              
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=12772.45..12785.24 rows=20 width=299) (actual time=14.964..14.977 rows=20 loops=1)
+   Buffers: shared hit=20123
+   ->  Index Scan using idx_pedidos_status_criado_em_cobrindo on pedidos  (cost=0.42..79980.30 rows=125117 width=299) (actual time=0.035..13.903 rows=20000 loops=1)
+         Index Cond: (status = 'entregue'::text)
+         Buffers: shared hit=20123
+ Planning Time: 0.140 ms
+ Execution Time: 15.004 ms
+(7 rows)
+
+##### [CONTAGEM] contagem | status=entregue | execucao 1
+                                                                               QUERY PLAN                                                                               
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Aggregate  (cost=5206.76..5206.77 rows=1 width=8) (actual time=27.720..27.721 rows=1 loops=1)
+   Buffers: shared hit=757
+   ->  Index Only Scan using idx_pedidos_status_criado_em_cobrindo on pedidos  (cost=0.42..4893.97 rows=125117 width=0) (actual time=0.038..19.954 rows=125000 loops=1)
+         Index Cond: (status = 'entregue'::text)
+         Heap Fetches: 0
+         Buffers: shared hit=757
+ Planning Time: 0.104 ms
+ Execution Time: 27.754 ms
+(8 rows)
+
+##### [CONTAGEM] contagem | status=entregue | execucao 2
+                                                                               QUERY PLAN                                                                               
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Aggregate  (cost=5206.76..5206.77 rows=1 width=8) (actual time=25.313..25.319 rows=1 loops=1)
+   Buffers: shared hit=757
+   ->  Index Only Scan using idx_pedidos_status_criado_em_cobrindo on pedidos  (cost=0.42..4893.97 rows=125117 width=0) (actual time=0.024..17.967 rows=125000 loops=1)
+         Index Cond: (status = 'entregue'::text)
+         Heap Fetches: 0
+         Buffers: shared hit=757
+ Planning Time: 0.076 ms
+ Execution Time: 25.350 ms
+(8 rows)
+
+##### [CONTAGEM] contagem | status=entregue | execucao 3
+                                                                               QUERY PLAN                                                                               
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Aggregate  (cost=5206.76..5206.77 rows=1 width=8) (actual time=27.030..27.031 rows=1 loops=1)
+   Buffers: shared hit=757
+   ->  Index Only Scan using idx_pedidos_status_criado_em_cobrindo on pedidos  (cost=0.42..4893.97 rows=125117 width=0) (actual time=0.044..19.034 rows=125000 loops=1)
+         Index Cond: (status = 'entregue'::text)
+         Heap Fetches: 0
+         Buffers: shared hit=757
+ Planning Time: 0.192 ms
+ Execution Time: 27.076 ms
+(8 rows)
+
+##### [NOVA] pagina 500 | status=cancelado | execucao 1
+                                                                              QUERY PLAN                                                                              
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=390.78..391.56 rows=20 width=22) (actual time=2.860..2.866 rows=20 loops=1)
+   Buffers: shared hit=64
+   ->  Index Only Scan using idx_pedidos_status_criado_em_cobrindo on pedidos  (cost=0.42..1947.62 rows=49783 width=22) (actual time=0.187..2.360 rows=10000 loops=1)
+         Index Cond: (status = 'cancelado'::text)
+         Heap Fetches: 0
+         Buffers: shared hit=64
+ Planning Time: 0.160 ms
+ Execution Time: 2.901 ms
+(8 rows)
+
+##### [NOVA] pagina 500 | status=cancelado | execucao 2
+                                                                              QUERY PLAN                                                                              
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=390.78..391.56 rows=20 width=22) (actual time=2.987..2.992 rows=20 loops=1)
+   Buffers: shared hit=64
+   ->  Index Only Scan using idx_pedidos_status_criado_em_cobrindo on pedidos  (cost=0.42..1947.62 rows=49783 width=22) (actual time=0.043..2.409 rows=10000 loops=1)
+         Index Cond: (status = 'cancelado'::text)
+         Heap Fetches: 0
+         Buffers: shared hit=64
+ Planning Time: 0.137 ms
+ Execution Time: 3.022 ms
+(8 rows)
+
+##### [NOVA] pagina 500 | status=cancelado | execucao 3
+                                                                              QUERY PLAN                                                                              
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=390.78..391.56 rows=20 width=22) (actual time=2.262..2.267 rows=20 loops=1)
+   Buffers: shared hit=64
+   ->  Index Only Scan using idx_pedidos_status_criado_em_cobrindo on pedidos  (cost=0.42..1947.62 rows=49783 width=22) (actual time=0.040..1.649 rows=10000 loops=1)
+         Index Cond: (status = 'cancelado'::text)
+         Heap Fetches: 0
+         Buffers: shared hit=64
+ Planning Time: 0.126 ms
+ Execution Time: 2.291 ms
+(8 rows)
+
+##### [ANTIGA] pagina 500 | status=cancelado | execucao 1
+                                                                             QUERY PLAN                                                                             
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=15376.88..15407.70 rows=20 width=299) (actual time=64.867..64.954 rows=20 loops=1)
+   Buffers: shared hit=9703 read=360
+   ->  Index Scan using idx_pedidos_status_criado_em_cobrindo on pedidos  (cost=0.42..76702.46 rows=49783 width=299) (actual time=0.019..64.400 rows=10000 loops=1)
+         Index Cond: (status = 'cancelado'::text)
+         Buffers: shared hit=9703 read=360
+ Planning Time: 0.091 ms
+ Execution Time: 64.974 ms
+(7 rows)
+
+##### [ANTIGA] pagina 500 | status=cancelado | execucao 2
+                                                                            QUERY PLAN                                                                             
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=15376.88..15407.70 rows=20 width=299) (actual time=7.423..7.438 rows=20 loops=1)
+   Buffers: shared hit=10063
+   ->  Index Scan using idx_pedidos_status_criado_em_cobrindo on pedidos  (cost=0.42..76702.46 rows=49783 width=299) (actual time=0.022..6.901 rows=10000 loops=1)
+         Index Cond: (status = 'cancelado'::text)
+         Buffers: shared hit=10063
+ Planning Time: 0.095 ms
+ Execution Time: 7.456 ms
+(7 rows)
+
+##### [ANTIGA] pagina 500 | status=cancelado | execucao 3
+                                                                            QUERY PLAN                                                                             
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=15376.88..15407.70 rows=20 width=299) (actual time=7.923..7.938 rows=20 loops=1)
+   Buffers: shared hit=10063
+   ->  Index Scan using idx_pedidos_status_criado_em_cobrindo on pedidos  (cost=0.42..76702.46 rows=49783 width=299) (actual time=0.019..7.376 rows=10000 loops=1)
+         Index Cond: (status = 'cancelado'::text)
+         Buffers: shared hit=10063
+ Planning Time: 0.087 ms
+ Execution Time: 7.964 ms
+(7 rows)
+
+##### [NOVA] pagina 1000 | status=cancelado | execucao 1
+                                                                              QUERY PLAN                                                                              
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=781.92..782.70 rows=20 width=22) (actual time=5.014..5.018 rows=20 loops=1)
+   Buffers: shared hit=124
+   ->  Index Only Scan using idx_pedidos_status_criado_em_cobrindo on pedidos  (cost=0.42..1947.62 rows=49783 width=22) (actual time=0.045..4.035 rows=20000 loops=1)
+         Index Cond: (status = 'cancelado'::text)
+         Heap Fetches: 0
+         Buffers: shared hit=124
+ Planning Time: 0.144 ms
+ Execution Time: 5.045 ms
+(8 rows)
+
+##### [NOVA] pagina 1000 | status=cancelado | execucao 2
+                                                                              QUERY PLAN                                                                              
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=781.92..782.70 rows=20 width=22) (actual time=6.513..6.521 rows=20 loops=1)
+   Buffers: shared hit=124
+   ->  Index Only Scan using idx_pedidos_status_criado_em_cobrindo on pedidos  (cost=0.42..1947.62 rows=49783 width=22) (actual time=0.022..5.439 rows=20000 loops=1)
+         Index Cond: (status = 'cancelado'::text)
+         Heap Fetches: 0
+         Buffers: shared hit=124
+ Planning Time: 0.085 ms
+ Execution Time: 6.545 ms
+(8 rows)
+
+##### [NOVA] pagina 1000 | status=cancelado | execucao 3
+                                                                              QUERY PLAN                                                                              
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=781.92..782.70 rows=20 width=22) (actual time=3.829..3.833 rows=20 loops=1)
+   Buffers: shared hit=124
+   ->  Index Only Scan using idx_pedidos_status_criado_em_cobrindo on pedidos  (cost=0.42..1947.62 rows=49783 width=22) (actual time=0.046..2.929 rows=20000 loops=1)
+         Index Cond: (status = 'cancelado'::text)
+         Heap Fetches: 0
+         Buffers: shared hit=124
+ Planning Time: 0.135 ms
+ Execution Time: 3.863 ms
+(8 rows)
+
+##### [ANTIGA] pagina 1000 | status=cancelado | execucao 1
+                                                                                QUERY PLAN                                                                                 
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=30282.52..30284.86 rows=20 width=299) (actual time=610.518..621.581 rows=20 loops=1)
+   Buffers: shared hit=5130 read=16036, temp read=1481 written=1962
+   ->  Gather Merge  (cost=27951.36..32791.73 rows=41486 width=299) (actual time=541.260..620.334 rows=20000 loops=1)
+         Workers Planned: 2
+         Workers Launched: 2
+         Buffers: shared hit=5130 read=16036, temp read=1481 written=1962
+         ->  Sort  (cost=26951.34..27003.19 rows=20743 width=299) (actual time=536.995..538.590 rows=6770 loops=3)
+               Sort Key: criado_em DESC, id DESC
+               Sort Method: external merge  Disk: 5648kB
+               Buffers: shared hit=5130 read=16036, temp read=1481 written=1962
+               Worker 0:  Sort Method: external merge  Disk: 5192kB
+               Worker 1:  Sort Method: external merge  Disk: 4832kB
+               ->  Parallel Bitmap Heap Scan on pedidos  (cost=1462.24..22555.53 rows=20743 width=299) (actual time=10.071..423.868 rows=16667 loops=3)
+                     Recheck Cond: (status = 'cancelado'::text)
+                     Heap Blocks: exact=7480
+                     Buffers: shared hit=5102 read=16036
+                     ->  Bitmap Index Scan on idx_pedidos_status_criado_em_cobrindo  (cost=0.00..1449.79 rows=49783 width=0) (actual time=7.624..7.625 rows=50000 loops=1)
+                           Index Cond: (status = 'cancelado'::text)
+                           Buffers: shared hit=304
+ Planning Time: 0.097 ms
+ Execution Time: 623.862 ms
+(21 rows)
+
+##### [ANTIGA] pagina 1000 | status=cancelado | execucao 2
+                                                                                 QUERY PLAN                                                                                  
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=30282.52..30284.86 rows=20 width=299) (actual time=588.751..594.546 rows=20 loops=1)
+   Buffers: shared hit=4555 read=16611, temp read=1330 written=1965
+   ->  Gather Merge  (cost=27951.36..32791.73 rows=41486 width=299) (actual time=528.120..593.248 rows=20000 loops=1)
+         Workers Planned: 2
+         Workers Launched: 2
+         Buffers: shared hit=4555 read=16611, temp read=1330 written=1965
+         ->  Sort  (cost=26951.34..27003.19 rows=20743 width=299) (actual time=520.063..521.857 rows=6784 loops=3)
+               Sort Key: criado_em DESC, id DESC
+               Sort Method: external merge  Disk: 7224kB
+               Buffers: shared hit=4555 read=16611, temp read=1330 written=1965
+               Worker 0:  Sort Method: external merge  Disk: 3816kB
+               Worker 1:  Sort Method: external merge  Disk: 4648kB
+               ->  Parallel Bitmap Heap Scan on pedidos  (cost=1462.24..22555.53 rows=20743 width=299) (actual time=17.988..413.016 rows=16667 loops=3)
+                     Recheck Cond: (status = 'cancelado'::text)
+                     Heap Blocks: exact=9559
+                     Buffers: shared hit=4527 read=16611
+                     ->  Bitmap Index Scan on idx_pedidos_status_criado_em_cobrindo  (cost=0.00..1449.79 rows=49783 width=0) (actual time=17.670..17.670 rows=50000 loops=1)
+                           Index Cond: (status = 'cancelado'::text)
+                           Buffers: shared hit=124 read=180
+ Planning Time: 0.153 ms
+ Execution Time: 596.500 ms
+(21 rows)
+
+##### [ANTIGA] pagina 1000 | status=cancelado | execucao 3
+                                                                                 QUERY PLAN                                                                                  
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=30282.52..30284.86 rows=20 width=299) (actual time=996.283..1004.024 rows=20 loops=1)
+   Buffers: shared hit=1405 read=19761, temp read=1362 written=1964
+   ->  Gather Merge  (cost=27951.36..32791.73 rows=41486 width=299) (actual time=935.126..1002.480 rows=20000 loops=1)
+         Workers Planned: 2
+         Workers Launched: 2
+         Buffers: shared hit=1405 read=19761, temp read=1362 written=1964
+         ->  Sort  (cost=26951.34..27003.19 rows=20743 width=299) (actual time=929.372..931.440 rows=6773 loops=3)
+               Sort Key: criado_em DESC, id DESC
+               Sort Method: external merge  Disk: 6488kB
+               Buffers: shared hit=1405 read=19761, temp read=1362 written=1964
+               Worker 0:  Sort Method: external merge  Disk: 4832kB
+               Worker 1:  Sort Method: external merge  Disk: 4360kB
+               ->  Parallel Bitmap Heap Scan on pedidos  (cost=1462.24..22555.53 rows=20743 width=299) (actual time=30.891..882.827 rows=16667 loops=3)
+                     Recheck Cond: (status = 'cancelado'::text)
+                     Heap Blocks: exact=8565
+                     Buffers: shared hit=1377 read=19761
+                     ->  Bitmap Index Scan on idx_pedidos_status_criado_em_cobrindo  (cost=0.00..1449.79 rows=49783 width=0) (actual time=30.842..30.842 rows=50000 loops=1)
+                           Index Cond: (status = 'cancelado'::text)
+                           Buffers: shared hit=1 read=303
+ Planning Time: 0.100 ms
+ Execution Time: 1007.106 ms
+(21 rows)
+
+##### [CONTAGEM] contagem | status=cancelado | execucao 1
+                                                                              QUERY PLAN                                                                              
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Aggregate  (cost=2072.08..2072.09 rows=1 width=8) (actual time=18.030..18.033 rows=1 loops=1)
+   Buffers: shared read=305
+   ->  Index Only Scan using idx_pedidos_status_criado_em_cobrindo on pedidos  (cost=0.42..1947.62 rows=49783 width=0) (actual time=1.989..13.677 rows=50000 loops=1)
+         Index Cond: (status = 'cancelado'::text)
+         Heap Fetches: 0
+         Buffers: shared read=305
+ Planning Time: 0.136 ms
+ Execution Time: 18.077 ms
+(8 rows)
+
+##### [CONTAGEM] contagem | status=cancelado | execucao 2
+                                                                              QUERY PLAN                                                                              
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Aggregate  (cost=2072.08..2072.09 rows=1 width=8) (actual time=15.212..15.214 rows=1 loops=1)
+   Buffers: shared hit=305
+   ->  Index Only Scan using idx_pedidos_status_criado_em_cobrindo on pedidos  (cost=0.42..1947.62 rows=49783 width=0) (actual time=0.034..10.537 rows=50000 loops=1)
+         Index Cond: (status = 'cancelado'::text)
+         Heap Fetches: 0
+         Buffers: shared hit=305
+ Planning Time: 0.110 ms
+ Execution Time: 15.250 ms
+(8 rows)
+
+##### [CONTAGEM] contagem | status=cancelado | execucao 3
+                                                                             QUERY PLAN                                                                              
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Aggregate  (cost=2072.08..2072.09 rows=1 width=8) (actual time=12.556..12.559 rows=1 loops=1)
+   Buffers: shared hit=305
+   ->  Index Only Scan using idx_pedidos_status_criado_em_cobrindo on pedidos  (cost=0.42..1947.62 rows=49783 width=0) (actual time=0.028..8.753 rows=50000 loops=1)
+         Index Cond: (status = 'cancelado'::text)
+         Heap Fetches: 0
+         Buffers: shared hit=305
+ Planning Time: 0.094 ms
+ Execution Time: 12.598 ms
+(8 rows)
+
+##### [NOVA] pagina 500 | status=pendente | execucao 1
+                                                                             QUERY PLAN                                                                              
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=392.09..392.88 rows=20 width=22) (actual time=6.143..6.148 rows=20 loops=1)
+   Buffers: shared hit=2 read=62
+   ->  Index Only Scan using idx_pedidos_status_criado_em_cobrindo on pedidos  (cost=0.42..975.00 rows=24833 width=22) (actual time=2.348..5.566 rows=10000 loops=1)
+         Index Cond: (status = 'pendente'::text)
+         Heap Fetches: 0
+         Buffers: shared hit=2 read=62
+ Planning Time: 0.339 ms
+ Execution Time: 6.187 ms
+(8 rows)
+
+##### [NOVA] pagina 500 | status=pendente | execucao 2
+                                                                             QUERY PLAN                                                                              
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=392.09..392.88 rows=20 width=22) (actual time=2.579..2.583 rows=20 loops=1)
+   Buffers: shared hit=64
+   ->  Index Only Scan using idx_pedidos_status_criado_em_cobrindo on pedidos  (cost=0.42..975.00 rows=24833 width=22) (actual time=0.034..2.051 rows=10000 loops=1)
+         Index Cond: (status = 'pendente'::text)
+         Heap Fetches: 0
+         Buffers: shared hit=64
+ Planning Time: 0.136 ms
+ Execution Time: 2.605 ms
+(8 rows)
+
+##### [NOVA] pagina 500 | status=pendente | execucao 3
+                                                                             QUERY PLAN                                                                              
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=392.09..392.88 rows=20 width=22) (actual time=1.764..1.768 rows=20 loops=1)
+   Buffers: shared hit=64
+   ->  Index Only Scan using idx_pedidos_status_criado_em_cobrindo on pedidos  (cost=0.42..975.00 rows=24833 width=22) (actual time=0.018..1.391 rows=10000 loops=1)
+         Index Cond: (status = 'pendente'::text)
+         Heap Fetches: 0
+         Buffers: shared hit=64
+ Planning Time: 0.070 ms
+ Execution Time: 1.780 ms
+(8 rows)
+
+##### [ANTIGA] pagina 500 | status=pendente | execucao 1
+                                                                             QUERY PLAN                                                                              
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=22807.94..22853.65 rows=20 width=299) (actual time=127.393..127.467 rows=20 loops=1)
+   Buffers: shared hit=6989 read=3074
+   ->  Index Scan using idx_pedidos_status_criado_em_cobrindo on pedidos  (cost=0.42..56751.83 rows=24833 width=299) (actual time=0.052..126.446 rows=10000 loops=1)
+         Index Cond: (status = 'pendente'::text)
+         Buffers: shared hit=6989 read=3074
+ Planning Time: 0.150 ms
+ Execution Time: 127.506 ms
+(7 rows)
+
+##### [ANTIGA] pagina 500 | status=pendente | execucao 2
+                                                                             QUERY PLAN                                                                             
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=22807.94..22853.65 rows=20 width=299) (actual time=14.850..14.877 rows=20 loops=1)
+   Buffers: shared hit=10063
+   ->  Index Scan using idx_pedidos_status_criado_em_cobrindo on pedidos  (cost=0.42..56751.83 rows=24833 width=299) (actual time=0.036..14.152 rows=10000 loops=1)
+         Index Cond: (status = 'pendente'::text)
+         Buffers: shared hit=10063
+ Planning Time: 0.249 ms
+ Execution Time: 14.922 ms
+(7 rows)
+
+##### [ANTIGA] pagina 500 | status=pendente | execucao 3
+                                                                             QUERY PLAN                                                                             
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=22807.94..22853.65 rows=20 width=299) (actual time=14.410..14.436 rows=20 loops=1)
+   Buffers: shared hit=10063
+   ->  Index Scan using idx_pedidos_status_criado_em_cobrindo on pedidos  (cost=0.42..56751.83 rows=24833 width=299) (actual time=0.056..13.676 rows=10000 loops=1)
+         Index Cond: (status = 'pendente'::text)
+         Buffers: shared hit=10063
+ Planning Time: 0.148 ms
+ Execution Time: 14.469 ms
+(7 rows)
+
+##### [NOVA] pagina 1000 | status=pendente | execucao 1
+                                                                             QUERY PLAN                                                                              
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=784.54..785.33 rows=20 width=22) (actual time=7.168..7.175 rows=20 loops=1)
+   Buffers: shared hit=64 read=60
+   ->  Index Only Scan using idx_pedidos_status_criado_em_cobrindo on pedidos  (cost=0.42..975.00 rows=24833 width=22) (actual time=0.052..5.722 rows=20000 loops=1)
+         Index Cond: (status = 'pendente'::text)
+         Heap Fetches: 0
+         Buffers: shared hit=64 read=60
+ Planning Time: 0.168 ms
+ Execution Time: 7.213 ms
+(8 rows)
+
+##### [NOVA] pagina 1000 | status=pendente | execucao 2
+                                                                             QUERY PLAN                                                                              
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=784.54..785.33 rows=20 width=22) (actual time=7.135..7.142 rows=20 loops=1)
+   Buffers: shared hit=124
+   ->  Index Only Scan using idx_pedidos_status_criado_em_cobrindo on pedidos  (cost=0.42..975.00 rows=24833 width=22) (actual time=0.036..5.709 rows=20000 loops=1)
+         Index Cond: (status = 'pendente'::text)
+         Heap Fetches: 0
+         Buffers: shared hit=124
+ Planning Time: 0.132 ms
+ Execution Time: 7.186 ms
+(8 rows)
+
+##### [NOVA] pagina 1000 | status=pendente | execucao 3
+                                                                             QUERY PLAN                                                                              
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=784.54..785.33 rows=20 width=22) (actual time=8.445..8.451 rows=20 loops=1)
+   Buffers: shared hit=124
+   ->  Index Only Scan using idx_pedidos_status_criado_em_cobrindo on pedidos  (cost=0.42..975.00 rows=24833 width=22) (actual time=0.042..7.332 rows=20000 loops=1)
+         Index Cond: (status = 'pendente'::text)
+         Heap Fetches: 0
+         Buffers: shared hit=124
+ Planning Time: 0.158 ms
+ Execution Time: 8.478 ms
+(8 rows)
+
+##### [ANTIGA] pagina 1000 | status=pendente | execucao 1
+                                                                                QUERY PLAN                                                                                
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=26782.14..26784.48 rows=20 width=299) (actual time=220.073..228.595 rows=20 loops=1)
+   Buffers: shared hit=8246 read=11935, temp read=481 written=482
+   ->  Gather Merge  (cost=24450.98..26865.45 rows=20694 width=299) (actual time=139.276..226.456 rows=20000 loops=1)
+         Workers Planned: 2
+         Workers Launched: 2
+         Buffers: shared hit=8246 read=11935, temp read=481 written=482
+         ->  Sort  (cost=23450.96..23476.82 rows=10347 width=299) (actual time=132.043..134.692 rows=6779 loops=3)
+               Sort Key: criado_em DESC, id DESC
+               Sort Method: external merge  Disk: 3848kB
+               Buffers: shared hit=8246 read=11935, temp read=481 written=482
+               Worker 0:  Sort Method: quicksort  Memory: 3168kB
+               Worker 1:  Sort Method: quicksort  Memory: 2718kB
+               ->  Parallel Bitmap Heap Scan on pedidos  (cost=732.88..22760.97 rows=10347 width=299) (actual time=10.893..104.009 rows=8333 loops=3)
+                     Recheck Cond: (status = 'pendente'::text)
+                     Heap Blocks: exact=9580
+                     Buffers: shared hit=8218 read=11935
+                     ->  Bitmap Index Scan on idx_pedidos_status_criado_em_cobrindo  (cost=0.00..726.67 rows=24833 width=0) (actual time=9.056..9.057 rows=25000 loops=1)
+                           Index Cond: (status = 'pendente'::text)
+                           Buffers: shared hit=123 read=30
+ Planning Time: 0.162 ms
+ Execution Time: 230.232 ms
+(21 rows)
+
+##### [ANTIGA] pagina 1000 | status=pendente | execucao 2
+                                                                                 QUERY PLAN                                                                                 
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=26782.14..26784.48 rows=20 width=299) (actual time=312.259..320.615 rows=20 loops=1)
+   Buffers: shared hit=4525 read=15656, temp read=434 written=435
+   ->  Gather Merge  (cost=24450.98..26865.45 rows=20694 width=299) (actual time=294.559..318.964 rows=20000 loops=1)
+         Workers Planned: 2
+         Workers Launched: 2
+         Buffers: shared hit=4525 read=15656, temp read=434 written=435
+         ->  Sort  (cost=23450.96..23476.82 rows=10347 width=299) (actual time=284.875..287.242 rows=6784 loops=3)
+               Sort Key: criado_em DESC, id DESC
+               Sort Method: external merge  Disk: 3472kB
+               Buffers: shared hit=4525 read=15656, temp read=434 written=435
+               Worker 0:  Sort Method: quicksort  Memory: 2613kB
+               Worker 1:  Sort Method: quicksort  Memory: 3791kB
+               ->  Parallel Bitmap Heap Scan on pedidos  (cost=732.88..22760.97 rows=10347 width=299) (actual time=14.392..248.534 rows=8333 loops=3)
+                     Recheck Cond: (status = 'pendente'::text)
+                     Heap Blocks: exact=8715
+                     Buffers: shared hit=4501 read=15652
+                     ->  Bitmap Index Scan on idx_pedidos_status_criado_em_cobrindo  (cost=0.00..726.67 rows=24833 width=0) (actual time=13.217..13.218 rows=25000 loops=1)
+                           Index Cond: (status = 'pendente'::text)
+                           Buffers: shared hit=123 read=30
+ Planning Time: 0.160 ms
+ Execution Time: 322.110 ms
+(21 rows)
+
+##### [ANTIGA] pagina 1000 | status=pendente | execucao 3
+                                                                                 QUERY PLAN                                                                                 
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=26782.14..26784.48 rows=20 width=299) (actual time=458.691..470.580 rows=20 loops=1)
+   Buffers: shared hit=2152 read=18029, temp read=392 written=393
+   ->  Gather Merge  (cost=24450.98..26865.45 rows=20694 width=299) (actual time=382.042..468.737 rows=20000 loops=1)
+         Workers Planned: 2
+         Workers Launched: 2
+         Buffers: shared hit=2152 read=18029, temp read=392 written=393
+         ->  Sort  (cost=23450.96..23476.82 rows=10347 width=299) (actual time=334.071..336.816 rows=6779 loops=3)
+               Sort Key: criado_em DESC, id DESC
+               Sort Method: external merge  Disk: 3136kB
+               Buffers: shared hit=2152 read=18029, temp read=392 written=393
+               Worker 0:  Sort Method: quicksort  Memory: 3458kB
+               Worker 1:  Sort Method: quicksort  Memory: 3372kB
+               ->  Parallel Bitmap Heap Scan on pedidos  (cost=732.88..22760.97 rows=10347 width=299) (actual time=33.255..297.019 rows=8333 loops=3)
+                     Recheck Cond: (status = 'pendente'::text)
+                     Heap Blocks: exact=7860
+                     Buffers: shared hit=2124 read=18029
+                     ->  Bitmap Index Scan on idx_pedidos_status_criado_em_cobrindo  (cost=0.00..726.67 rows=24833 width=0) (actual time=65.831..65.833 rows=25000 loops=1)
+                           Index Cond: (status = 'pendente'::text)
+                           Buffers: shared hit=123 read=30
+ Planning Time: 0.142 ms
+ Execution Time: 472.216 ms
+(21 rows)
+
+##### [CONTAGEM] contagem | status=pendente | execucao 1
+                                                                             QUERY PLAN                                                                             
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Aggregate  (cost=1037.08..1037.09 rows=1 width=8) (actual time=10.274..10.276 rows=1 loops=1)
+   Buffers: shared read=154
+   ->  Index Only Scan using idx_pedidos_status_criado_em_cobrindo on pedidos  (cost=0.42..975.00 rows=24833 width=0) (actual time=0.105..7.299 rows=25000 loops=1)
+         Index Cond: (status = 'pendente'::text)
+         Heap Fetches: 0
+         Buffers: shared read=154
+ Planning Time: 0.157 ms
+ Execution Time: 10.331 ms
+(8 rows)
+
+##### [CONTAGEM] contagem | status=pendente | execucao 2
+                                                                             QUERY PLAN                                                                             
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Aggregate  (cost=1037.08..1037.09 rows=1 width=8) (actual time=8.036..8.038 rows=1 loops=1)
+   Buffers: shared hit=154
+   ->  Index Only Scan using idx_pedidos_status_criado_em_cobrindo on pedidos  (cost=0.42..975.00 rows=24833 width=0) (actual time=0.043..5.527 rows=25000 loops=1)
+         Index Cond: (status = 'pendente'::text)
+         Heap Fetches: 0
+         Buffers: shared hit=154
+ Planning Time: 0.286 ms
+ Execution Time: 8.081 ms
+(8 rows)
+
+##### [CONTAGEM] contagem | status=pendente | execucao 3
+                                                                             QUERY PLAN                                                                             
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Aggregate  (cost=1037.08..1037.09 rows=1 width=8) (actual time=11.807..11.809 rows=1 loops=1)
+   Buffers: shared hit=154
+   ->  Index Only Scan using idx_pedidos_status_criado_em_cobrindo on pedidos  (cost=0.42..975.00 rows=24833 width=0) (actual time=0.046..9.091 rows=25000 loops=1)
+         Index Cond: (status = 'pendente'::text)
+         Heap Fetches: 0
+         Buffers: shared hit=154
+ Planning Time: 0.099 ms
+ Execution Time: 11.850 ms
+(8 rows)
+
+##### INDICES de pedidos ao final (nada deve ter mudado)
+               indexname               
+---------------------------------------
+ idx_pedidos_cliente_id
+ idx_pedidos_criado_em_dia
+ idx_pedidos_status_criado_em_cobrindo
+ pedidos_pkey
+(4 rows)
+
