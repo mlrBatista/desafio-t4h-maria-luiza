@@ -54,3 +54,18 @@ COBRINDO pagina 1000     3 execuções: 3.738 | 3.671 | 3.804 ms | mediana 3.738
 ---------------------------+----------+--------------+---------------
  idx_pedidos_criado_em_dia |     1652 |      7100513 |             0
 (1 row)
+
+== MEDIANAS E RAZÕES (acrescentado por script a partir de diagnostico/explain-pedidos.txt; nenhum número digitado) ==
+Mediana = valor do meio das 3 execuções de cada caso, em ms. Razão = divisão de duas medianas.
+
+status      contagem   p500 atual  p1000 atual  p500 cobrindo  p1000 cobrindo | contagem/p500  contagem/p1000  p1000/contagem | p500 atual/cobrindo  p1000 atual/cobrindo
+pago         105.734       7.213       16.504          1.879           3.569 |         14.7x            6.4x            0.2x |                3.8x                  4.6x
+entregue      29.288       7.860       18.671          1.908           3.606 |          3.7x            1.6x            0.6x |                4.1x                  5.2x
+cancelado     23.303       7.857      369.886          1.943           3.625 |          3.0x            0.1x           15.9x |                4.0x                102.0x
+pendente       8.581      12.629      319.152          1.949           3.738 |          0.7x            0.0x           37.2x |                6.5x                 85.4x
+
+Faixa das medianas COBRINDO entre os 4 status (substitui os "~1,9 ms" e "~3,6 ms" arredondados):
+  página 500: 1.879 a 1.949 ms | página 1000: 3.569 a 3.738 ms
+
+Média simples das medianas dos 4 status (a carga escolhe os 4 status com igual probabilidade, carga/teste-carga.js:48; só as páginas 500 e 1000 foram medidas, não a faixa 1 a 1000):
+  contagem: 41.726 ms | página 500 atual: 8.890 ms | página 1000 atual: 181.053 ms | página 500 cobrindo: 1.920 ms | página 1000 cobrindo: 3.635 ms
