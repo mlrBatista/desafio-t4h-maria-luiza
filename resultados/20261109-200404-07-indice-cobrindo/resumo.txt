@@ -1,0 +1,17 @@
+Medição: 07-indice-cobrindo
+Carga: 20 usuários virtuais por 60s
+
+Requisições:        4910
+Requisições/s:      81.60
+Tempo de resposta:  mediana 190.3 ms | p95 699.0 ms | p99 1177.4 ms
+Erros:              0.00%
+
+Por rota:
+rota                  req       mediana       p95           p99           erros   
+cliente               1279      106.8 ms      208.8 ms      294.2 ms      0.0%    
+cliente-por-email     718       106.2 ms      208.8 ms      298.6 ms      0.0%    
+pedidos-do-cliente    1022      301.3 ms      582.2 ms      699.6 ms      0.0%    
+pedidos-por-status    699       503.0 ms      1201.8 ms     1440.9 ms     0.0%    
+busca-produtos        726       189.1 ms      299.3 ms      397.8 ms      0.0%    
+vendas-por-dia        380       107.2 ms      204.3 ms      291.0 ms      0.0%    
+top-produtos          86        112.1 ms      212.3 ms      300.6 ms      0.0%    
