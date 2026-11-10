@@ -1,0 +1,195 @@
+# Estado do banco depois de aplicar a mudança 08, ANTES de qualquer medição. Script: diagnostico/estado-banco-08.sql (psql -f, ON_ERROR_STOP).
+# Commit: 0759f64 | 2026-11-09 21:11:44 -0300 | Banco recriado com down -v, autovacuum feito nas 4 tabelas, contrato mantido.
+
+##### Tabela-resumo x count(*) por status
+  status   | resumo | contagem | bate 
+-----------+--------+----------+------
+ cancelado |  50000 |    50000 | t
+ entregue  | 125000 |   125000 | t
+ pago      | 300000 |   300000 | t
+ pendente  |  25000 |    25000 | t
+(4 rows)
+
+##### Tamanho da tabela-resumo (pg_total_relation_size)
+ bytes | tamanho 
+-------+---------
+ 32768 | 32 kB
+(1 row)
+
+##### Triggers de pedidos
+           tgname            | tgenabled 
+-----------------------------+-----------
+ pedidos_por_status_delete   | O
+ pedidos_por_status_insert   | O
+ pedidos_por_status_truncate | O
+ pedidos_por_status_update   | O
+(4 rows)
+
+##### [LEITURA NOVA] status=pago | execucao 1
+                                                     QUERY PLAN                                                     
+--------------------------------------------------------------------------------------------------------------------
+ Result  (cost=1.05..1.06 rows=1 width=8) (actual time=0.033..0.034 rows=1 loops=1)
+   Buffers: shared hit=1
+   InitPlan 1 (returns $0)
+     ->  Seq Scan on pedidos_por_status  (cost=0.00..1.05 rows=1 width=8) (actual time=0.025..0.027 rows=1 loops=1)
+           Filter: (status = 'pago'::text)
+           Rows Removed by Filter: 3
+           Buffers: shared hit=1
+ Planning Time: 0.202 ms
+ Execution Time: 0.127 ms
+(9 rows)
+
+##### [LEITURA NOVA] status=pago | execucao 2
+                                                     QUERY PLAN                                                     
+--------------------------------------------------------------------------------------------------------------------
+ Result  (cost=1.05..1.06 rows=1 width=8) (actual time=0.031..0.033 rows=1 loops=1)
+   Buffers: shared hit=1
+   InitPlan 1 (returns $0)
+     ->  Seq Scan on pedidos_por_status  (cost=0.00..1.05 rows=1 width=8) (actual time=0.024..0.026 rows=1 loops=1)
+           Filter: (status = 'pago'::text)
+           Rows Removed by Filter: 3
+           Buffers: shared hit=1
+ Planning Time: 0.197 ms
+ Execution Time: 0.066 ms
+(9 rows)
+
+##### [LEITURA NOVA] status=pago | execucao 3
+                                                     QUERY PLAN                                                     
+--------------------------------------------------------------------------------------------------------------------
+ Result  (cost=1.05..1.06 rows=1 width=8) (actual time=0.023..0.024 rows=1 loops=1)
+   Buffers: shared hit=1
+   InitPlan 1 (returns $0)
+     ->  Seq Scan on pedidos_por_status  (cost=0.00..1.05 rows=1 width=8) (actual time=0.017..0.019 rows=1 loops=1)
+           Filter: (status = 'pago'::text)
+           Rows Removed by Filter: 3
+           Buffers: shared hit=1
+ Planning Time: 0.135 ms
+ Execution Time: 0.047 ms
+(9 rows)
+
+##### [LEITURA NOVA] status=entregue | execucao 1
+                                                     QUERY PLAN                                                     
+--------------------------------------------------------------------------------------------------------------------
+ Result  (cost=1.05..1.06 rows=1 width=8) (actual time=0.024..0.026 rows=1 loops=1)
+   Buffers: shared hit=1
+   InitPlan 1 (returns $0)
+     ->  Seq Scan on pedidos_por_status  (cost=0.00..1.05 rows=1 width=8) (actual time=0.017..0.019 rows=1 loops=1)
+           Filter: (status = 'entregue'::text)
+           Rows Removed by Filter: 3
+           Buffers: shared hit=1
+ Planning Time: 0.494 ms
+ Execution Time: 0.054 ms
+(9 rows)
+
+##### [LEITURA NOVA] status=entregue | execucao 2
+                                                     QUERY PLAN                                                     
+--------------------------------------------------------------------------------------------------------------------
+ Result  (cost=1.05..1.06 rows=1 width=8) (actual time=0.027..0.029 rows=1 loops=1)
+   Buffers: shared hit=1
+   InitPlan 1 (returns $0)
+     ->  Seq Scan on pedidos_por_status  (cost=0.00..1.05 rows=1 width=8) (actual time=0.020..0.022 rows=1 loops=1)
+           Filter: (status = 'entregue'::text)
+           Rows Removed by Filter: 3
+           Buffers: shared hit=1
+ Planning Time: 0.323 ms
+ Execution Time: 0.062 ms
+(9 rows)
+
+##### [LEITURA NOVA] status=entregue | execucao 3
+                                                     QUERY PLAN                                                     
+--------------------------------------------------------------------------------------------------------------------
+ Result  (cost=1.05..1.06 rows=1 width=8) (actual time=0.028..0.029 rows=1 loops=1)
+   Buffers: shared hit=1
+   InitPlan 1 (returns $0)
+     ->  Seq Scan on pedidos_por_status  (cost=0.00..1.05 rows=1 width=8) (actual time=0.021..0.023 rows=1 loops=1)
+           Filter: (status = 'entregue'::text)
+           Rows Removed by Filter: 3
+           Buffers: shared hit=1
+ Planning Time: 0.176 ms
+ Execution Time: 0.064 ms
+(9 rows)
+
+##### [LEITURA NOVA] status=cancelado | execucao 1
+                                                     QUERY PLAN                                                     
+--------------------------------------------------------------------------------------------------------------------
+ Result  (cost=1.05..1.06 rows=1 width=8) (actual time=0.037..0.039 rows=1 loops=1)
+   Buffers: shared hit=1
+   InitPlan 1 (returns $0)
+     ->  Seq Scan on pedidos_por_status  (cost=0.00..1.05 rows=1 width=8) (actual time=0.030..0.032 rows=1 loops=1)
+           Filter: (status = 'cancelado'::text)
+           Rows Removed by Filter: 3
+           Buffers: shared hit=1
+ Planning Time: 0.313 ms
+ Execution Time: 0.081 ms
+(9 rows)
+
+##### [LEITURA NOVA] status=cancelado | execucao 2
+                                                     QUERY PLAN                                                     
+--------------------------------------------------------------------------------------------------------------------
+ Result  (cost=1.05..1.06 rows=1 width=8) (actual time=0.038..0.040 rows=1 loops=1)
+   Buffers: shared hit=1
+   InitPlan 1 (returns $0)
+     ->  Seq Scan on pedidos_por_status  (cost=0.00..1.05 rows=1 width=8) (actual time=0.028..0.031 rows=1 loops=1)
+           Filter: (status = 'cancelado'::text)
+           Rows Removed by Filter: 3
+           Buffers: shared hit=1
+ Planning Time: 0.236 ms
+ Execution Time: 0.080 ms
+(9 rows)
+
+##### [LEITURA NOVA] status=cancelado | execucao 3
+                                                     QUERY PLAN                                                     
+--------------------------------------------------------------------------------------------------------------------
+ Result  (cost=1.05..1.06 rows=1 width=8) (actual time=0.072..0.074 rows=1 loops=1)
+   Buffers: shared hit=1
+   InitPlan 1 (returns $0)
+     ->  Seq Scan on pedidos_por_status  (cost=0.00..1.05 rows=1 width=8) (actual time=0.053..0.058 rows=1 loops=1)
+           Filter: (status = 'cancelado'::text)
+           Rows Removed by Filter: 3
+           Buffers: shared hit=1
+ Planning Time: 0.467 ms
+ Execution Time: 0.151 ms
+(9 rows)
+
+##### [LEITURA NOVA] status=pendente | execucao 1
+                                                     QUERY PLAN                                                     
+--------------------------------------------------------------------------------------------------------------------
+ Result  (cost=1.05..1.06 rows=1 width=8) (actual time=0.039..0.041 rows=1 loops=1)
+   Buffers: shared hit=1
+   InitPlan 1 (returns $0)
+     ->  Seq Scan on pedidos_por_status  (cost=0.00..1.05 rows=1 width=8) (actual time=0.028..0.032 rows=1 loops=1)
+           Filter: (status = 'pendente'::text)
+           Rows Removed by Filter: 3
+           Buffers: shared hit=1
+ Planning Time: 0.231 ms
+ Execution Time: 0.080 ms
+(9 rows)
+
+##### [LEITURA NOVA] status=pendente | execucao 2
+                                                     QUERY PLAN                                                     
+--------------------------------------------------------------------------------------------------------------------
+ Result  (cost=1.05..1.06 rows=1 width=8) (actual time=0.035..0.037 rows=1 loops=1)
+   Buffers: shared hit=1
+   InitPlan 1 (returns $0)
+     ->  Seq Scan on pedidos_por_status  (cost=0.00..1.05 rows=1 width=8) (actual time=0.023..0.028 rows=1 loops=1)
+           Filter: (status = 'pendente'::text)
+           Rows Removed by Filter: 3
+           Buffers: shared hit=1
+ Planning Time: 0.206 ms
+ Execution Time: 0.074 ms
+(9 rows)
+
+##### [LEITURA NOVA] status=pendente | execucao 3
+                                                     QUERY PLAN                                                     
+--------------------------------------------------------------------------------------------------------------------
+ Result  (cost=1.05..1.06 rows=1 width=8) (actual time=0.031..0.033 rows=1 loops=1)
+   Buffers: shared hit=1
+   InitPlan 1 (returns $0)
+     ->  Seq Scan on pedidos_por_status  (cost=0.00..1.05 rows=1 width=8) (actual time=0.022..0.026 rows=1 loops=1)
+           Filter: (status = 'pendente'::text)
+           Rows Removed by Filter: 3
+           Buffers: shared hit=1
+ Planning Time: 0.184 ms
+ Execution Time: 0.066 ms
+(9 rows)
+

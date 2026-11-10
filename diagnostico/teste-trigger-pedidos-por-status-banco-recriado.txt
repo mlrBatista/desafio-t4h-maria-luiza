@@ -1,0 +1,213 @@
+# Mesmo teste de correção (diagnostico/teste-trigger-pedidos-por-status.sql), agora no banco RECRIADO com down -v, tudo dentro de BEGIN/ROLLBACK.
+# Commit atual: 0759f64 | Data e hora: 2026-11-09 21:11:52 -0300
+
+##### ESTADO ORIGINAL (antes do BEGIN)
+                        resumo_original                        
+---------------------------------------------------------------
+ cancelado=50000, entregue=125000, pago=300000, pendente=25000
+(1 row)
+
+ pedidos | itens_pedido 
+---------+--------------
+  500000 |      1500000
+(1 row)
+
+ maior_id_de_pedido 
+--------------------
+             500000
+(1 row)
+
+     triggers_de_pedidos     
+-----------------------------
+ pedidos_por_status_delete
+ pedidos_por_status_insert
+ pedidos_por_status_truncate
+ pedidos_por_status_update
+(4 rows)
+
+BEGIN
+##### PASSO 0: antes de mexer em nada
+  status   | resumo | contagem | bate 
+-----------+--------+----------+------
+ cancelado |  50000 |    50000 | t
+ entregue  | 125000 |   125000 | t
+ pago      | 300000 |   300000 | t
+ pendente  |  25000 |    25000 | t
+(4 rows)
+
+ tudo_bate 
+-----------
+ t
+(1 row)
+
+##### PASSO 1: INSERT de 12 pedidos novos (ids acima do maior, cliente_id 1, sem itens), status variados, 2 deles com status novo teste_novo
+INSERT 0 12
+   status   | resumo | contagem | bate 
+------------+--------+----------+------
+ cancelado  |  50003 |    50003 | t
+ entregue   | 125003 |   125003 | t
+ pago       | 300002 |   300002 | t
+ pendente   |  25002 |    25002 | t
+ teste_novo |      2 |        2 | t
+(5 rows)
+
+ tudo_bate 
+-----------
+ t
+(1 row)
+
+##### PASSO 2: muda o status de 4 pedidos novos e de 1 pedido existente (id 1)
+ status_do_pedido_1_antes 
+--------------------------
+ pago
+(1 row)
+
+UPDATE 4
+UPDATE 1
+ status_do_pedido_1_depois 
+---------------------------
+ pendente
+(1 row)
+
+   status   | resumo | contagem | bate 
+------------+--------+----------+------
+ cancelado  |  50002 |    50002 | t
+ entregue   | 125006 |   125006 | t
+ pago       | 300001 |   300001 | t
+ pendente   |  25002 |    25002 | t
+ teste_novo |      1 |        1 | t
+(5 rows)
+
+ tudo_bate 
+-----------
+ t
+(1 row)
+
+##### PASSO 3: UPDATEs que NÃO mudam o status (mesmo valor e outra coluna): não podem alterar o resumo
+UPDATE 2
+UPDATE 2
+   status   | resumo | contagem | bate 
+------------+--------+----------+------
+ cancelado  |  50002 |    50002 | t
+ entregue   | 125006 |   125006 | t
+ pago       | 300001 |   300001 | t
+ pendente   |  25002 |    25002 | t
+ teste_novo |      1 |        1 | t
+(5 rows)
+
+ tudo_bate 
+-----------
+ t
+(1 row)
+
+##### PASSO 4: DELETE de 5 pedidos novos
+DELETE 5
+   status   | resumo | contagem | bate 
+------------+--------+----------+------
+ cancelado  |  50002 |    50002 | t
+ entregue   | 125002 |   125002 | t
+ pago       | 300000 |   300000 | t
+ pendente   |  25002 |    25002 | t
+ teste_novo |      1 |        1 | t
+(5 rows)
+
+ tudo_bate 
+-----------
+ t
+(1 row)
+
+##### PASSO 5: DELETE de um pedido existente (id 3) e dos seus itens
+DELETE 4
+DELETE 1
+   status   | resumo | contagem | bate 
+------------+--------+----------+------
+ cancelado  |  50002 |    50002 | t
+ entregue   | 125002 |   125002 | t
+ pago       | 299999 |   299999 | t
+ pendente   |  25002 |    25002 | t
+ teste_novo |      1 |        1 | t
+(5 rows)
+
+ tudo_bate 
+-----------
+ t
+(1 row)
+
+##### PASSO 6: um único UPDATE de várias linhas para um status novo
+UPDATE 3
+   status   | resumo | contagem | bate 
+------------+--------+----------+------
+ cancelado  |  50002 |    50002 | t
+ entregue   | 125002 |   125002 | t
+ pago       | 299997 |   299997 | t
+ pendente   |  25001 |    25001 | t
+ teste_novo |      4 |        4 | t
+(5 rows)
+
+ tudo_bate 
+-----------
+ t
+(1 row)
+
+##### PASSO 7: TRUNCATE de pedidos (e de itens_pedido, que referencia pedidos)
+TRUNCATE TABLE
+   status   | total 
+------------+-------
+ cancelado  |     0
+ entregue   |     0
+ pago       |     0
+ pendente   |     0
+ teste_novo |     0
+(5 rows)
+
+ linhas_em_pedidos 
+-------------------
+                 0
+(1 row)
+
+ tudo_bate 
+-----------
+ t
+(1 row)
+
+ROLLBACK
+##### DEPOIS DO ROLLBACK: tudo precisa ter voltado ao original
+  status   | resumo | contagem | bate 
+-----------+--------+----------+------
+ cancelado |  50000 |    50000 | t
+ entregue  | 125000 |   125000 | t
+ pago      | 300000 |   300000 | t
+ pendente  |  25000 |    25000 | t
+(4 rows)
+
+ tudo_bate 
+-----------
+ t
+(1 row)
+
+ resumo_voltou_ao_original 
+---------------------------
+ t
+(1 row)
+
+ pedidos | itens_pedido 
+---------+--------------
+  500000 |      1500000
+(1 row)
+
+     triggers_de_pedidos     
+-----------------------------
+ pedidos_por_status_delete
+ pedidos_por_status_insert
+ pedidos_por_status_truncate
+ pedidos_por_status_update
+(4 rows)
+
+          indices_de_pedidos           
+---------------------------------------
+ idx_pedidos_cliente_id
+ idx_pedidos_criado_em_dia
+ idx_pedidos_status_criado_em_cobrindo
+ pedidos_pkey
+(4 rows)
+
