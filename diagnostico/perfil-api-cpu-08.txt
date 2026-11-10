@@ -1,0 +1,70 @@
+# Perfil de CPU da API (node --cpu-prof) durante a carga, código do commit 52134d2 (mudança 08 aplicada; banco com índice cobrindo e pedidos_por_status).
+# Condições: 20 VUs, 60 s, semente 42, sem aquecimento, API com limite de 0.5 CPU e 256 MB (confirmado com docker inspect), perfil gravado em 2026-11-09 21:56:37 -0300.
+# O profiler adiciona sobrecarga: os tempos NÃO são comparáveis com o medir.sh, só a distribuição relativa vale.
+# Percentuais sobre o tempo ativo da CPU (exclui (idle)). 'self' = tempo da própria função; 'inclusivo' = ela mais tudo o que chama.
+# Substitui o perfil anterior (perfil-api-cpu.txt), feito antes da mudança 05, quando vendas-por-dia ainda agregava ~57 mil linhas na API.
+# (nativo) = função nativa do Node/V8: writeBuffer e writev são escritas em socket/stdout; (program) é código nativo sem função JavaScript associada.
+
+Duração amostrada: 64.74 s | ocioso (idle): 7.38 s | ativo: 57.36 s
+Tempo próprio (self) por função, em % do tempo ATIVO da CPU:
+ 10.7%    6.14 s  writeBuffer  (nativo)
+  7.0%    4.02 s  (program)  (nativo)
+  5.9%    3.40 s  writev  (nativo)
+  5.1%    2.92 s  (garbage collector)  (nativo)
+  4.5%    2.58 s  res.json  src/server.js:10
+  4.1%    2.32 s  consoleCall  (nativo)
+  2.2%    1.29 s  stringify  node_modules/express/lib/response.js:1155
+  2.0%    1.15 s  writeUtf8String  (nativo)
+  1.7%    0.97 s  writeHead  node:_http_server:341
+  1.3%    0.75 s  end  node:_http_outgoing:1030
+  1.2%    0.69 s  emit  node:events:466
+  1.2%    0.67 s  send  node_modules/express/lib/response.js:111
+  1.2%    0.67 s  _send  node:_http_outgoing:354
+  1.0%    0.60 s  createWriteWrap  node:internal/stream_base_commons:110
+  1.0%    0.60 s  expressInit  node_modules/express/lib/middleware/init.js:29
+  1.0%    0.58 s  _addListener  node:events:547
+  1.0%    0.58 s  slice  node:buffer:633
+  1.0%    0.57 s  parse  node_modules/content-type/index.js:106
+  0.9%    0.53 s  write_  node:_http_outgoing:894
+  0.9%    0.53 s  runMicrotasks  (nativo)
+  0.9%    0.53 s  _storeHeader  node:_http_outgoing:410
+  0.9%    0.52 s  Hash  node:internal/crypto/hash:66
+  0.9%    0.52 s  header  node_modules/express/lib/response.js:777
+  0.9%    0.51 s  parseDate  node_modules/postgres-date/index.js:8
+  0.8%    0.45 s  resOnFinish  node:_http_server:968
+  0.8%    0.45 s  json  node_modules/express/lib/response.js:250
+  0.8%    0.45 s  insert  node:internal/timers:366
+  0.7%    0.43 s  addFields  node_modules/pg/lib/result.js:81
+  0.7%    0.39 s  _dump  node:_http_incoming:429
+  0.6%    0.37 s  parserOnHeadersComplete  node:_http_common:71
+
+Por origem (% do tempo ativo, tempo próprio):
+ 67.0%  node:internal / nativo (inclui (program) e escrita de rede/stdout)
+ 12.3%  node_modules/: express e dependências HTTP
+  9.6%  node_modules/: driver pg (pg, pg-protocol, pg-types, pg-pool, postgres-*)
+  6.0%  código da aplicação (src/)
+  5.1%  coletor de lixo (GC)
+  0.0%  node_modules/: outros
+
+Middleware de log de src/server.js (res.json reescrito na linha 10; ele faz console.log(JSON.stringify({... resposta: corpo})) e depois chama o res.json original do Express):
+  wrapper res.json, inclusivo (tudo o que roda dentro dele):  40.0%   22.96 s
+  wrapper res.json, só o tempo próprio (self):   4.5%
+  filhos diretos do wrapper (inclusivo):
+     27.0%   15.46 s  json  node_modules/express/lib/response.js:250
+      8.2%    4.71 s  consoleCall  (nativo)
+      0.2%    0.12 s  send  node_modules/express/lib/response.js:111
+      0.1%    0.06 s  header  node_modules/express/lib/response.js:777
+      0.0%    0.00 s  app.<computed>  node_modules/express/lib/application.js:490
+      0.0%    0.00 s  set  node_modules/express/lib/application.js:359
+      0.0%    0.00 s  wrappedFn  node:internal/errors:536
+
+Manipuladores de rota de src/rotas.js (inclusivo, % do tempo ativo; só CPU em JavaScript, sem a espera pelo banco):
+  9.2%    5.27 s  /clientes/:id/pedidos
+  8.9%    5.10 s  /clientes/:id
+  7.3%    4.19 s  /pedidos
+  6.5%    3.74 s  /clientes
+  5.3%    3.02 s  /produtos/busca
+  3.2%    1.83 s  /relatorios/vendas-por-dia
+  1.1%    0.65 s  ?
+  0.9%    0.49 s  /relatorios/top-produtos
+  0.0%    0.01 s  /saude
