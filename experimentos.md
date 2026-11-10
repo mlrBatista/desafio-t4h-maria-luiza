@@ -26,6 +26,7 @@ Registro de cada mudança aplicada na aplicação, com a hipótese, a fonte da i
 | 05 | `vendas-por-dia` agregado no SQL | Aplicada, sem ganho de vazão | 05-controle (controle) | 26.59 → 27.07 | 1977.8 → 1812.0 | banco 65.8% → 99.3%; API 46.8% → 11.9% | tirou o trabalho da API; o gargalo voltou para o banco |
 | 06 | Materialized view para `vendas-por-dia` | Aplicada e medida | 06-controle (controle) | 29.29 → 53.61 | 1803.0 → 1110.2 | banco 99.7% → 100.2%; API 12.8% → 20.4% | ~1,8x a vazão com a mesma CPU do banco; todas as rotas mais rápidas |
 | 07 | Índice cobrindo + `SELECT` das 4 colunas em `/pedidos` | Aplicada e medida | 07-controle (controle A-B-A) | 51.34 → 81.60 | 1128.3 → 699.0 | banco 97.9% → 97.9%; API 18.7% → 25.2% | ~1,6x a vazão; os dois controles iguais (51.34 e 52.25), então o ganho é da mudança |
+| 08 | Tabela-resumo do total por status, mantida por trigger | Aplicada e medida | 08-controle (controle A-B-A) | 90.51 → 265.71 | 604.5 → 162.3 | banco 96.9% → 57.8%; API 24.4% → 50.3% | ~2,9x a vazão; o banco saiu do limite e o gargalo passou para a API |
 
 ## 01 · Pool de conexões
 
@@ -231,6 +232,49 @@ Registro de cada mudança aplicada na aplicação, com a hipótese, a fonte da i
 - **Conclusão:** ~1,6x mais requisições/s (51.34 → 81.60) e p95 ~38% menor. Os dois controles ficaram praticamente iguais (51.34 e 52.25 req/s; p95 de 1128.3 e 1197.8 ms), então a máquina ficou estável durante as 9 execuções e o ganho é da mudança. Como na 06, todas as rotas ficaram mais rápidas, não só `/pedidos`: o banco segue a ~98% de CPU, mas gasta menos por requisição e atende ~60% mais. A memória média do banco caiu (426.7 → 371.7 MiB); a hipótese é que menos páginas da tabela passam a ser carregadas, o que não foi verificado. A API subiu de 18.7% para 25.2% de CPU média, e uma das execuções da mudança teve pico de 51.99% no `recursos.csv`, acima do limite de 50% (0.5 CPU): a API volta a se aproximar do limite.
 - **O que continua igual:** a contagem por status, que ainda soma todas as linhas do status a cada requisição. Com o índice novo, a contagem de `pago` levou 63.955 ms com o banco ocioso ([diagnostico/estado-banco-07.txt](diagnostico/estado-banco-07.txt)).
 - **Índice sem uso confirmado:** o `idx_pedidos_criado_em_dia` teve `idx_scan` 0 antes e 0 depois das 9 execuções, com `idx_tup_read` 0 ([diagnostico/idx-scan-depois-07.txt](diagnostico/idx-scan-depois-07.txt)). Nenhuma rota o usa; a remoção fica para uma mudança própria.
+
+## 08 · Tabela-resumo do total por status, mantida por trigger, em `GET /pedidos`
+
+- **Commit:** `9d3bdf4` (mudança, [banco/07-pedidos-por-status.sql](banco/07-pedidos-por-status.sql) e [api/src/rotas.js](api/src/rotas.js)) · diagnósticos em `0759f64` e `a543805` · resultados em `3e64156` (controle), `252a714` (mudança) e `060dbcd` (controle depois).
+- **O que mudou:**
+  - **No banco:** uma tabela `pedidos_por_status` (4 linhas: status e total), preenchida com a contagem dos pedidos na criação do banco, e triggers em `pedidos` que a mantêm correta: `INSERT` soma 1 no status, `DELETE` subtrai 1, `UPDATE` que muda o status subtrai do antigo e soma no novo, e `TRUNCATE` zera os totais.
+  - **Na API:** a contagem `SELECT count(*) FROM pedidos WHERE status = $1` passou a ser a leitura do total dessa tabela (com `COALESCE(..., 0)` para um status sem pedidos). A página e o resto da rota não mudaram.
+- **Por que trigger e não materialized view:** as duas leem 4 linhas prontas, então, para esta carga, que só lê, o desempenho de leitura deve ser equivalente (a variante com view não foi medida). A diferença está nas escritas: a view seria uma foto da criação do banco e ficaria errada até um `REFRESH`, que conta todas as linhas de novo; a tabela com trigger fica correta a cada escrita, sem `REFRESH`. Para um total que aparece na resposta de uma rota de consulta, e não num relatório que aceita atraso, preferimos que ele esteja sempre correto. Nas mudanças 04 e 06, que são relatórios, a materialized view foi mantida.
+- **Hipótese:** depois da 07, a contagem era o maior custo que sobrava em `/pedidos`, e o banco seguia a ~98% de CPU. Lendo o total de uma tabela de 4 linhas, em vez de contar todas as linhas do status a cada requisição, a contagem deixa de consumir CPU do banco, a vazão sobe e `/pedidos` fica mais rápida. Custo esperado: cada escrita em `pedidos` também atualiza uma linha da tabela-resumo.
+- **Evidência que originou a ideia:** contagem com o índice novo, banco ocioso, 3 execuções por status ([diagnostico/explain-pedidos-07-resumo.txt](diagnostico/explain-pedidos-07-resumo.txt)): mediana de 205.306 ms em `pago`, 27.076 em `entregue`, 15.250 em `cancelado` e 10.331 em `pendente`, com Parallel Index Only Scan e `Heap Fetches: 0`, ou seja, já no caminho mais barato que uma contagem exata permite. A página, depois da 07, custava de 2.605 a 7.213 ms.
+- **Fonte:** PostgreSQL 16, *Trigger Functions*, Example 43.6 (*A PL/pgSQL Trigger Function for Maintaining a Summary Table*): "One use of triggers is to maintain a summary table of another table. The resulting summary can be used in place of the original table for certain queries — often with vastly reduced run times." (https://www.postgresql.org/docs/16/plpgsql-trigger.html).
+- **Teste de correção dos triggers:** a carga do desafio só lê, então ela nunca dispara os triggers. A evidência de que eles estão certos vem de um teste dentro de `BEGIN ... ROLLBACK` ([diagnostico/teste-trigger-pedidos-por-status.txt](diagnostico/teste-trigger-pedidos-por-status.txt), repetido no banco recriado em [diagnostico/teste-trigger-pedidos-por-status-banco-recriado.txt](diagnostico/teste-trigger-pedidos-por-status-banco-recriado.txt)): em 8 passos (inserir 12 pedidos, 2 deles com um status novo; mudar o status de pedidos novos e de um existente; `UPDATE` sem mudança de status; apagar pedidos novos e um existente com os itens; `UPDATE` de várias linhas; `TRUNCATE`), a tabela-resumo bateu com `count(*)` por status em todos. Depois do `ROLLBACK`, os totais voltaram a cancelado=50000, entregue=125000, pago=300000 e pendente=25000.
+- **Custo nas escritas** ([diagnostico/custo-escrita-trigger-pedidos-por-status-resumo.txt](diagnostico/custo-escrita-trigger-pedidos-por-status-resumo.txt)): diagnóstico isolado, não vem do `medir.sh`. `INSERT` de 10 mil pedidos dentro de `BEGIN ... ROLLBACK`, 3 vezes de cada lado: com trigger, 2618.959, 990.097 e 806.505 ms (mediana 990.097 ms); sem trigger, 2328.978, 274.079 e 169.714 ms (mediana 274.079 ms). Razão das medianas: 3.61x, ou ~0.0716 ms a mais por linha inserida. A 1ª execução de cada lado inclui cache frio, e as razões por par variaram de 1.12x a 4.75x, então o número indica uma ordem de grandeza, não um valor preciso.
+- **Verificação extra do contrato:** 22 respostas de `/pedidos` idênticas byte a byte antes e depois ([diagnostico/comparacao-rota-pedidos-08.txt](diagnostico/comparacao-rota-pedidos-08.txt)).
+- **Estado do banco antes de medir** ([diagnostico/estado-banco-08.txt](diagnostico/estado-banco-08.txt)): banco recriado, autovacuum feito, tabela-resumo igual ao `count(*)` por status, triggers presentes, 32 kB de tamanho. A leitura nova do total levou de 0.047 a 0.151 ms (12 execuções, 3 por status), contra 205.306 ms da contagem de `pago`.
+- **Condições da medição:** A-B-A no mesmo banco e em sequência, com o código da API conferido dentro do container antes de cada série e uma carga de aquecimento de 60 s sem gravar antes da primeira série. Na série do controle, a 3ª execução começou ~5,5 minutos depois da 2ª (pastas `20261109-211447` e `20261109-212024`), um intervalo maior que o normal e sem explicação registrada; a 1ª execução dessa série também foi mais baixa (67.51 req/s). A mediana da série não depende dessas duas observações, e ela ficou próxima da do controle depois.
+- **Ressalva sobre o controle:** os controles rodam o código antigo (`count(*)`) no banco que já tem a tabela-resumo e os triggers. Como a carga só lê, os triggers não disparam, e a tabela-resumo não é lida pelo código antigo, então o controle faz o mesmo trabalho que a versão anterior.
+- **Antes (controle):** [08-controle](resultados/20261109-211322-08-controle), [2](resultados/20261109-211447-08-controle), [3](resultados/20261109-212024-08-controle).
+- **Depois:** [08-resumo-status](resultados/20261109-212204-08-resumo-status), [2](resultados/20261109-212325-08-resumo-status), [3](resultados/20261109-212446-08-resumo-status).
+- **Controle depois:** [08-controle-depois](resultados/20261109-212625-08-controle-depois), [2](resultados/20261109-212747-08-controle-depois), [3](resultados/20261109-212908-08-controle-depois).
+
+| Métrica (mediana das 3) | Controle | Mudança | Controle depois |
+|---|---|---|---|
+| Requisições/s | 90.51 (execuções: 67.51, 95.66, 90.51) | 265.71 (execuções: 259.48, 265.71, 272.82) | 91.89 (execuções: 93.37, 91.39, 91.89) |
+| Mediana geral | 184.9 ms | 80.3 ms | 181.2 ms |
+| p95 | 604.5 ms | 162.3 ms | 601.6 ms |
+| p99 | 999.5 ms | 194.9 ms | 1002.1 ms |
+| CPU / memória do banco | 96.9% / 365.2 MiB | 57.8% / 437.8 MiB | 99.4% / 426.4 MiB |
+| CPU / memória da API | 24.4% / 27.5 MiB | 50.3% / 28.8 MiB | 25.6% / 26.8 MiB |
+| Pico de CPU da API (mediana dos máximos do `recursos.csv`) | 43.38% | 52.60% | 44.34% |
+
+| Rota (mediana das medianas) | Controle | Mudança | Controle depois |
+|---|---|---|---|
+| cliente | 103.2 ms | 69.3 ms | 103.7 ms |
+| cliente-por-email | 103.5 ms | 71.0 ms | 103.8 ms |
+| pedidos-do-cliente | 293.8 ms | 102.3 ms | 289.0 ms |
+| pedidos-por-status | 417.8 ms | 92.7 ms | 431.9 ms |
+| busca-produtos | 182.9 ms | 78.3 ms | 168.9 ms |
+| vendas-por-dia | 101.9 ms | 71.3 ms | 103.0 ms |
+| top-produtos | 104.2 ms | 72.1 ms | 106.1 ms |
+
+- **Conclusão:** ~2,9x mais requisições/s (90.51 → 265.71) e p95 ~73% menor, com todas as rotas mais rápidas. Os dois controles ficaram praticamente iguais (90.51 e 91.89 req/s; p95 de 604.5 e 601.6 ms), então o ganho é da mudança. Pela primeira vez desde a linha de base, o banco saiu do limite (CPU média de 96.9% para 57.8%): a contagem era o maior consumidor de CPU do banco que sobrava. **O gargalo passou para a API**, com CPU média de 50.3%, igual ao limite de 0.5 CPU, e picos acima dele (52.60% de mediana dos máximos; 54.86% no maior). A memória média do banco subiu na mudança (365.2 → 437.8 MiB), mas o controle depois também ficou alto (426.4 MiB), então isso parece variação entre séries, e não efeito da mudança.
+- **Custos e limites:** a tabela ocupa 32 kB. O custo real fica nas escritas, que a carga não mede: ~3,6x no `INSERT` de 10 mil pedidos no diagnóstico isolado. Além disso, todas as escritas de um mesmo status atualizam a mesma linha da tabela-resumo e esperam umas pelas outras até o fim da transação; numa loja com muitos pedidos simultâneos, isso pode virar um ponto de espera. A documentação do PostgreSQL mostra que triggers por comando com *transition tables* "can be significantly faster than the row-trigger approach when the invoking statement has modified many rows", uma alternativa para inserções em lote que não foi testada.
 
 ## Séries que não entram nas comparações
 
