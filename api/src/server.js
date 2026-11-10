@@ -13,7 +13,6 @@ app.use((req, res, next) => {
       url: req.originalUrl,
       status: res.statusCode,
       duracao_ms: Date.now() - inicio,
-      resposta: corpo,
     }));
     return enviarJson(corpo);
   };
