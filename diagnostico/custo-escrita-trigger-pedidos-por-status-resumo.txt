@@ -1,0 +1,7 @@
+# Resumo derivado de diagnostico/custo-escrita-trigger-pedidos-por-status.txt (gerado por script; nenhum número digitado).
+# DIAGNÓSTICO ISOLADO: INSERT de 10000 pedidos dentro de BEGIN/ROLLBACK, banco ocioso. Não vem do medir.sh. 1ª execução de cada lado inclui efeito de cache frio.
+COM trigger: 2618.959 | 990.097 | 806.505 ms | mediana 990.097 ms
+SEM trigger: 2328.978 | 274.079 | 169.714 ms | mediana 274.079 ms
+razão das medianas (COM / SEM): 3.61x
+razão por par de execuções (COM / SEM): 1.12x | 3.61x | 4.75x
+diferença das medianas dividida por 10000 linhas: 0.0716 ms por linha inserida

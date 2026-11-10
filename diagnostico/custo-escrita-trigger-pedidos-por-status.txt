@@ -1,0 +1,67 @@
+# Saída de diagnostico/custo-escrita-trigger-pedidos-por-status.sql, rodado com psql -f (ON_ERROR_STOP), tudo dentro de BEGIN/ROLLBACK.
+# Commit atual: 9d3bdf4 | Data e hora: 2026-11-09 21:08:19 -0300 | Banco ocioso, nenhuma medição rodando.
+
+##### COM trigger, execucao 1
+BEGIN
+Timing is on.
+INSERT 0 10000
+Time: 2618.959 ms (00:02.619)
+Timing is off.
+ROLLBACK
+##### SEM trigger, execucao 1
+BEGIN
+ALTER TABLE
+Timing is on.
+INSERT 0 10000
+Time: 2328.978 ms (00:02.329)
+Timing is off.
+ROLLBACK
+##### COM trigger, execucao 2
+BEGIN
+Timing is on.
+INSERT 0 10000
+Time: 990.097 ms
+Timing is off.
+ROLLBACK
+##### SEM trigger, execucao 2
+BEGIN
+ALTER TABLE
+Timing is on.
+INSERT 0 10000
+Time: 274.079 ms
+Timing is off.
+ROLLBACK
+##### COM trigger, execucao 3
+BEGIN
+Timing is on.
+INSERT 0 10000
+Time: 806.505 ms
+Timing is off.
+ROLLBACK
+##### SEM trigger, execucao 3
+BEGIN
+ALTER TABLE
+Timing is on.
+INSERT 0 10000
+Time: 169.714 ms
+Timing is off.
+ROLLBACK
+##### ESTADO FINAL: triggers ligados e totais intactos
+           tgname            | tgenabled 
+-----------------------------+-----------
+ pedidos_por_status_delete   | O
+ pedidos_por_status_insert   | O
+ pedidos_por_status_truncate | O
+ pedidos_por_status_update   | O
+(4 rows)
+
+                            resumo                             
+---------------------------------------------------------------
+ cancelado=50000, entregue=125000, pago=300000, pendente=25000
+(1 row)
+
+ pedidos 
+---------
+  500000
+(1 row)
+
