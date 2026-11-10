@@ -1,0 +1,17 @@
+Medição: 10-api-1cpu
+Carga: 20 usuários virtuais por 60s
+
+Requisições:        28431
+Requisições/s:      473.73
+Tempo de resposta:  mediana 35.1 ms | p95 87.4 ms | p99 113.8 ms
+Erros:              0.00%
+
+Por rota:
+rota                  req       mediana       p95           p99           erros   
+cliente               7202      25.1 ms       64.6 ms       83.5 ms       0.0%    
+cliente-por-email     4305      25.6 ms       65.4 ms       86.8 ms       0.0%    
+pedidos-do-cliente    5715      59.7 ms       106.4 ms      149.4 ms      0.0%    
+pedidos-por-status    4185      50.8 ms       95.4 ms       118.8 ms      0.0%    
+busca-produtos        4197      37.4 ms       83.8 ms       104.7 ms      0.0%    
+vendas-por-dia        2280      26.0 ms       63.8 ms       83.2 ms       0.0%    
+top-produtos          547       25.2 ms       66.2 ms       79.6 ms       0.0%    
