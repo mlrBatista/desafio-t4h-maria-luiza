@@ -1,0 +1,17 @@
+Medição: 09-log-sem-corpo
+Carga: 20 usuários virtuais por 60s
+
+Requisições:        11367
+Requisições/s:      189.27
+Tempo de resposta:  mediana 96.5 ms | p95 198.2 ms | p99 286.8 ms
+Erros:              0.00%
+
+Por rota:
+rota                  req       mediana       p95           p99           erros   
+cliente               2822      83.8 ms       159.9 ms      201.3 ms      0.0%    
+cliente-por-email     1664      85.5 ms       169.9 ms      239.0 ms      0.0%    
+pedidos-do-cliente    2347      128.8 ms      264.9 ms      364.7 ms      0.0%    
+pedidos-por-status    1657      106.3 ms      197.7 ms      291.0 ms      0.0%    
+busca-produtos        1737      94.1 ms       181.0 ms      277.7 ms      0.0%    
+vendas-por-dia        929       84.9 ms       153.6 ms      199.8 ms      0.0%    
+top-produtos          211       85.3 ms       156.2 ms      206.1 ms      0.0%    
