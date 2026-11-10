@@ -1,0 +1,38 @@
+# Comparação byte a byte: GET /pedidos ANTES (contagem com count(*), mudança 07) x DEPOIS (total lido de pedidos_por_status, mudança 08).
+# Feita ANTES de commitar a mudança 08, com a tabela e os triggers de banco/07-pedidos-por-status.sql aplicados no banco atual (o banco é recriado no passo seguinte).
+# Cada resposta = corpo + linha 'HTTP <status>'. 4 status x páginas 1, 2, 500, 1000 e 20000 (além do fim), mais pagina=0 e status inválido.
+respostas comparadas: 22
+iguais (byte a byte): 22
+diferentes: 0
+status HTTP das respostas novas:
+     20 HTTP 200
+      2 HTTP 400
+totais devolvidos (pagina 1 de cada status):
+"total":300000
+"total":125000
+"total":50000
+"total":25000
+
+consultas (query string):
+status=pago&pagina=1
+status=pago&pagina=2
+status=pago&pagina=500
+status=pago&pagina=1000
+status=pago&pagina=20000
+status=entregue&pagina=1
+status=entregue&pagina=2
+status=entregue&pagina=500
+status=entregue&pagina=1000
+status=entregue&pagina=20000
+status=cancelado&pagina=1
+status=cancelado&pagina=2
+status=cancelado&pagina=500
+status=cancelado&pagina=1000
+status=cancelado&pagina=20000
+status=pendente&pagina=1
+status=pendente&pagina=2
+status=pendente&pagina=500
+status=pendente&pagina=1000
+status=pendente&pagina=20000
+status=pago&pagina=0
+status=invalido&pagina=1
