@@ -8,7 +8,7 @@ A aplicação é a API de uma loja fictícia, em Node.js (Express) com PostgreSQ
 
 **O problema.** Sob a carga do teste (20 usuários virtuais por 60 s), a aplicação original atendia 1.69 requisições/s, com p95 de 38198.7 ms. O banco ficava a ~98% de CPU porque quase todas as consultas liam tabelas inteiras, e algumas rotas faziam dezenas de consultas por requisição ou somavam milhões de linhas a cada chamada.
 
-**O que foi feito.** Oito mudanças, uma por commit, cada uma medida 3 vezes com `scripts/medir.sh` e com o contrato verificado (as respostas da API continuam idênticas):
+**O que foi feito.** Nove mudanças, uma por commit, cada uma medida 3 vezes com `scripts/medir.sh` e com o contrato verificado (as respostas da API continuam idênticas):
 
 | # | Mudança | req/s antes → depois (mediana de 3) | Resultado |
 |---|---|---|---|
@@ -20,6 +20,7 @@ A aplicação é a API de uma loja fictícia, em Node.js (Express) com PostgreSQ
 | 06 | Materialized view para `vendas-por-dia` | 29.29 → 53.61 | ~1,8x |
 | 07 | Índice cobrindo e `SELECT` só das colunas usadas em `/pedidos` | 51.34 → 81.60 | ~1,6x, confirmado por um segundo controle depois da mudança (52.25) |
 | 08 | Total de pedidos por status numa tabela-resumo mantida por trigger | 90.51 → 265.71 | ~2,9x; o banco saiu do limite e o gargalo passou para a API |
+| 09 | Log de cada resposta sem o corpo da resposta | 259.45 → 261.31 e 280.90 → 256.56 (dois pares) | sem ganho de vazão mensurável; log ~10x menor |
 
 A partir da 03, o "antes" é um controle medido no mesmo dia e no mesmo banco, com o código anterior, porque a máquina variou mais entre dias do que o efeito de algumas mudanças. Por isso, os números de linhas diferentes da tabela não devem ser comparados entre si.
 
