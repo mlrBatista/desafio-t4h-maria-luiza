@@ -1,0 +1,7 @@
+# Bytes de log da API durante a 1ª execução de cada série da mudança 09 (docker compose logs api --no-log-prefix --since <início> --until <fim> | wc -c).
+# A janela inclui o aquecimento de 15 s do medir.sh, a medição de 60 s e a verificação de contrato, então não é só a medição.
+# ATENÇÃO: a janela da 09-controle-depois NÃO é confiável: o computador suspendeu durante essa execução (o relógio saltou de 22:23 de 09/11 para 19:09 de 10/11), então a janela cobre ~20 horas de relógio.
+
+09-controle execucao 1: janela 2026-11-10T01:14:25Z a 2026-11-10T01:15:48Z, bytes de log da API: 18891047
+09-log-sem-corpo execucao 1: janela 2026-11-10T01:18:51Z a 2026-11-10T01:20:15Z, bytes de log da API: 1085787
+09-controle-depois execucao 1: janela 2026-11-10T01:23:18Z a 2026-11-10T22:09:46Z, bytes de log da API: 17913962
