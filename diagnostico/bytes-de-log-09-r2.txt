@@ -1,0 +1,6 @@
+# Bytes de log da API durante a 1ª execução de cada série da repetição (r2) da mudança 09 (docker compose logs api --no-log-prefix --since <início> --until <fim> | wc -c).
+# A janela inclui o aquecimento de 15 s do medir.sh, a medição de 60 s e a verificação de contrato. Quanto mais requisições na janela, mais bytes: a 09-controle-depois-r2 atendeu mais requisições que a 09-controle-r2.
+
+09-controle-r2 execucao 1: janela 2026-11-10T22:18:18Z a 2026-11-10T22:19:43Z, bytes de log da API: 15766698
+09-log-sem-corpo-r2 execucao 1: janela 2026-11-10T22:23:54Z a 2026-11-10T22:25:14Z, bytes de log da API: 1577798
+09-controle-depois-r2 execucao 1: janela 2026-11-10T22:29:16Z a 2026-11-10T22:30:36Z, bytes de log da API: 23346524
