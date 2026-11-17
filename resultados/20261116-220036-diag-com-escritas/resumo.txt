@@ -1,0 +1,17 @@
+Medição: diag-com-escritas
+Carga: 20 usuários virtuais por 60s
+
+Requisições:        13994
+Requisições/s:      233.13
+Tempo de resposta:  mediana 86.2 ms | p95 173.6 ms | p99 203.2 ms
+Erros:              0.00%
+
+Por rota:
+rota                  req       mediana       p95           p99           erros   
+cliente               3494      75.5 ms       101.9 ms      163.0 ms      0.0%    
+cliente-por-email     2089      74.9 ms       100.6 ms      161.1 ms      0.0%    
+pedidos-do-cliente    2863      112.7 ms      194.2 ms      261.6 ms      0.0%    
+pedidos-por-status    2028      104.4 ms      186.5 ms      258.3 ms      0.0%    
+busca-produtos        2113      84.2 ms       114.0 ms      175.9 ms      0.0%    
+vendas-por-dia        1150      76.8 ms       104.6 ms      162.4 ms      0.0%    
+top-produtos          257       75.2 ms       105.7 ms      171.6 ms      0.0%    
