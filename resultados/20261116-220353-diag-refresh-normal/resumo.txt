@@ -1,0 +1,17 @@
+Medição: diag-refresh-normal
+Carga: 20 usuários virtuais por 60s
+
+Requisições:        12541
+Requisições/s:      208.88
+Tempo de resposta:  mediana 87.7 ms | p95 180.4 ms | p99 262.1 ms
+Erros:              0.00%
+
+Por rota:
+rota                  req       mediana       p95           p99           erros   
+cliente               3119      77.2 ms       103.1 ms      177.1 ms      0.0%    
+cliente-por-email     1856      77.1 ms       103.2 ms      178.2 ms      0.0%    
+pedidos-do-cliente    2568      113.2 ms      204.5 ms      296.1 ms      0.0%    
+pedidos-por-status    1828      106.1 ms      197.8 ms      287.3 ms      0.0%    
+busca-produtos        1912      84.7 ms       136.5 ms      191.2 ms      0.0%    
+vendas-por-dia        1028      77.2 ms       108.8 ms      206.6 ms      0.0%    
+top-produtos          230       78.3 ms       113.5 ms      6060.4 ms     0.0%    
