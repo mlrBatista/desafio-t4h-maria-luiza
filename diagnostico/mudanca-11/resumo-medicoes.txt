@@ -1,0 +1,110 @@
+# RESUMO das medições da mudança 11 (remover o idx_pedidos_criado_em_dia), gerado por diagnostico/mudanca-11/gerar-resumo-medicoes.js. Nenhum número foi digitado.
+# Data e hora da geração: Tue Nov 17 2026 13:25:13 GMT-0300 (Brasilia Standard Time) | Commit (HEAD): af4824b
+# A-B-A em sessão contínua, no mesmo dia, com o computador na tomada, 60 s de aquecimento sem gravar antes de cada série e o banco recriado (down -v) a cada mudança de versão.
+
+== MEDIANAS DAS 3 EXECUÇÕES (valores por execução → mediana) ==
+
+A · 11-controle (com o índice)
+  req/s                                    290.65 | 297.88 | 296.32     → 296.32
+  requisições                              17442 | 17882 | 17788        → 17788
+  mediana geral (ms)                       75.8 | 75.6 | 75.9           → 75.8
+  p95 geral (ms)                           123.8 | 115.2 | 113.3        → 115.2
+  p99 geral (ms)                           185.2 | 177.2 | 183.9        → 183.9
+  CPU média do banco (%)                   62.6 | 61.5 | 61.1           → 61.5
+  pico de CPU do banco (%, recursos.csv)   72.7 | 82.3 | 73.7           → 73.7
+  memória média do banco (MiB)             293.7 | 382.1 | 406.6        → 382.1
+  CPU média da API (%)                     49.2 | 50.6 | 50.7           → 50.6
+  pico de CPU da API (%, recursos.csv)     52.0 | 52.3 | 52.1           → 52.1
+  memória média da API (MiB)               30.5 | 73.3 | 73.9           → 73.3
+  contexto.txt: 130442 commit=4c0ce23 sem commit=0 api=500000000 contrato mantido=true ; 130603 commit=4c0ce23 sem commit=0 api=500000000 contrato mantido=true ; 130725 commit=4c0ce23 sem commit=0 api=500000000 contrato mantido=true
+
+B · 11-sem-indice-dia (sem o índice)
+  req/s                                    320.36 | 292.85 | 296.84     → 296.84
+  requisições                              19244 | 17580 | 17823        → 17823
+  mediana geral (ms)                       70.2 | 76.4 | 76.0           → 76.0
+  p95 geral (ms)                           117.2 | 115.1 | 113.8        → 115.1
+  p99 geral (ms)                           182.8 | 186.2 | 181.3        → 182.8
+  CPU média do banco (%)                   59.2 | 57.4 | 56.4           → 57.4
+  pico de CPU do banco (%, recursos.csv)   75.7 | 67.1 | 65.2           → 67.1
+  memória média do banco (MiB)             439.4 | 436.4 | 442.1        → 439.4
+  CPU média da API (%)                     50.8 | 49.4 | 50.1           → 50.1
+  pico de CPU da API (%, recursos.csv)     53.4 | 52.1 | 52.3           → 52.3
+  memória média da API (MiB)               27.8 | 28.0 | 28.1           → 28.0
+  contexto.txt: 131145 commit=d9a15a3 sem commit=0 api=500000000 contrato mantido=true ; 131307 commit=d9a15a3 sem commit=0 api=500000000 contrato mantido=true ; 131428 commit=d9a15a3 sem commit=0 api=500000000 contrato mantido=true
+
+A' · 11-controle-depois (com o índice de novo)
+  req/s                                    286.16 | 300.70 | 293.69     → 293.69
+  requisições                              17180 | 18057 | 17628        → 17628
+  mediana geral (ms)                       77.8 | 75.5 | 76.5           → 76.5
+  p95 geral (ms)                           118.7 | 112.5 | 113.7        → 113.7
+  p99 geral (ms)                           182.9 | 177.9 | 184.3        → 182.9
+  CPU média do banco (%)                   60.6 | 59.5 | 56.8           → 59.5
+  pico de CPU do banco (%, recursos.csv)   74.4 | 73.6 | 67.5           → 73.6
+  memória média do banco (MiB)             424.2 | 449.1 | 452.5        → 449.1
+  CPU média da API (%)                     49.0 | 50.4 | 49.5           → 49.5
+  pico de CPU da API (%, recursos.csv)     52.0 | 52.4 | 55.8           → 52.4
+  memória média da API (MiB)               27.6 | 27.9 | 28.2           → 27.9
+  contexto.txt: 131849 commit=4c0ce23 sem commit=0 api=500000000 contrato mantido=true ; 132010 commit=4c0ce23 sem commit=0 api=500000000 contrato mantido=true ; 132131 commit=4c0ce23 sem commit=0 api=500000000 contrato mantido=true
+
+== MEDIANA · p95 · p99 DE CADA ROTA (mediana das 3 execuções, ms) ==
+
+/clientes/:id
+  A · 11-controle                       64.5 ·    92.7 ·   126.0   [medianas por execução: 61.4, 64.5, 64.6]
+  B · 11-sem-indice-dia                 48.1 ·    92.8 ·   144.3   [medianas por execução: 34.1, 48.1, 61.1]
+  A' · 11-controle-depois               61.7 ·    92.2 ·   157.2   [medianas por execução: 65.0, 48.5, 61.7]
+
+/clientes?email=
+  A · 11-controle                       64.4 ·    93.2 ·   129.6   [medianas por execução: 66.2, 64.4, 60.5]
+  B · 11-sem-indice-dia                 66.2 ·    93.7 ·   159.9   [medianas por execução: 33.7, 67.3, 66.2]
+  A' · 11-controle-depois               65.9 ·    92.8 ·   135.0   [medianas por execução: 69.8, 39.9, 65.9]
+
+/clientes/:id/pedidos
+  A · 11-controle                       96.9 ·   170.2 ·   200.3   [medianas por execução: 99.0, 95.8, 96.9]
+  B · 11-sem-indice-dia                 96.2 ·   170.6 ·   199.2   [medianas por execução: 93.6, 97.3, 96.2]
+  A' · 11-controle-depois               97.5 ·   171.6 ·   202.2   [medianas por execução: 98.7, 96.8, 97.5]
+
+/pedidos
+  A · 11-controle                       87.6 ·   127.8 ·   186.7   [medianas por execução: 88.0, 87.1, 87.6]
+  B · 11-sem-indice-dia                 87.1 ·   153.9 ·   194.3   [medianas por execução: 82.6, 88.6, 87.1]
+  A' · 11-controle-depois               87.8 ·   120.4 ·   191.7   [medianas por execução: 89.8, 87.2, 87.8]
+
+/produtos/busca
+  A · 11-controle                       73.8 ·   101.7 ·   167.9   [medianas por execução: 73.8, 73.8, 74.5]
+  B · 11-sem-indice-dia                 74.5 ·   100.9 ·   167.0   [medianas por execução: 68.0, 75.3, 74.5]
+  A' · 11-controle-depois               75.1 ·   100.3 ·   168.1   [medianas por execução: 76.2, 74.4, 75.1]
+
+/relatorios/vendas-por-dia
+  A · 11-controle                       64.4 ·    92.7 ·   139.5   [medianas por execução: 64.4, 59.7, 64.5]
+  B · 11-sem-indice-dia                 61.8 ·    92.2 ·   118.9   [medianas por execução: 34.4, 68.7, 61.8]
+  A' · 11-controle-depois               66.9 ·    92.9 ·   149.9   [medianas por execução: 68.2, 65.2, 66.9]
+
+/relatorios/top-produtos
+  A · 11-controle                       43.1 ·    93.9 ·   143.8   [medianas por execução: 43.1, 35.3, 65.8]
+  B · 11-sem-indice-dia                 44.7 ·    90.7 ·   105.1   [medianas por execução: 33.7, 44.7, 58.7]
+  A' · 11-controle-depois               63.5 ·    92.1 ·   105.8   [medianas por execução: 67.8, 37.5, 63.5]
+
+== COMPARAÇÃO (req/s, conta sobre as medianas) ==
+  A 296.32 (290.65 a 297.88) | B 296.84 (292.85 a 320.36) | A' 293.69 (286.16 a 300.70)
+  B contra A: 0.2% | B contra A': 1.1% | A' contra A (diferença entre os dois controles): -0.9%
+  a diferença da mudança contra o controle mais próximo (0.2%) é MENOR que a diferença entre os dois controles (0.9%)
+  mediana geral (ms): A 75.8 | B 76.0 | A' 76.5; p95: A 115.2 | B 115.1 | A' 113.7; p99: A 183.9 | B 182.8 | A' 182.9
+
+== TAMANHO DOS ÍNDICES DE pedidos (pg_relation_size, salvo antes de cada série) ==
+  A (com o índice): 4 índices, 42868736 bytes (41 MB)
+      idx_pedidos_cliente_id | 5857280 | 5720 kB
+      idx_pedidos_criado_em_dia | 3637248 | 3552 kB
+      idx_pedidos_status_criado_em_cobrindo | 22118400 | 21 MB
+      pedidos_pkey | 11255808 | 11 MB
+      idx_pedidos_cliente_id
+      idx_pedidos_criado_em_dia
+      idx_pedidos_status_criado_em_cobrindo
+      pedidos_pkey
+  B (sem o índice): 3 índices, 39231488 bytes (37 MB)
+      idx_pedidos_cliente_id | 5857280 | 5720 kB
+      idx_pedidos_status_criado_em_cobrindo | 22118400 | 21 MB
+      pedidos_pkey | 11255808 | 11 MB
+      idx_pedidos_cliente_id
+      idx_pedidos_status_criado_em_cobrindo
+      pedidos_pkey
+  A' (com o índice): 4 índices, 42868736 bytes (41 MB)
+  economia (A menos B): 3637248 bytes = 3552 kB

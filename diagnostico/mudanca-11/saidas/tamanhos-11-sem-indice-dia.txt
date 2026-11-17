@@ -1,0 +1,20 @@
+# tamanhos dos índices de pedidos em 2026-11-17 13:10:44 -0300 (11-sem-indice-dia)
+                indice                 |  bytes   | tamanho 
+---------------------------------------+----------+---------
+ idx_pedidos_cliente_id                |  5857280 | 5720 kB
+ idx_pedidos_status_criado_em_cobrindo | 22118400 | 21 MB
+ pedidos_pkey                          | 11255808 | 11 MB
+(3 rows)
+
+ indices | bytes_total | tamanho_total 
+---------+-------------+---------------
+       3 |    39231488 | 37 MB
+(1 row)
+
+               indexname               
+---------------------------------------
+ idx_pedidos_cliente_id
+ idx_pedidos_status_criado_em_cobrindo
+ pedidos_pkey
+(3 rows)
+
