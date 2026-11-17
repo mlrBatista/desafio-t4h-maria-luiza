@@ -1,0 +1,17 @@
+Medição: diag-refresh-concorrente
+Carga: 20 usuários virtuais por 60s
+
+Requisições:        13973
+Requisições/s:      232.57
+Tempo de resposta:  mediana 84.9 ms | p95 183.4 ms | p99 238.0 ms
+Erros:              0.00%
+
+Por rota:
+rota                  req       mediana       p95           p99           erros   
+cliente               3492      71.9 ms       102.8 ms      186.4 ms      0.0%    
+cliente-por-email     2084      72.1 ms       103.6 ms      182.5 ms      0.0%    
+pedidos-do-cliente    2868      110.4 ms      206.3 ms      280.1 ms      0.0%    
+pedidos-por-status    2018      104.1 ms      202.8 ms      273.7 ms      0.0%    
+busca-produtos        2111      84.0 ms       132.0 ms      193.7 ms      0.0%    
+vendas-por-dia        1143      73.7 ms       104.2 ms      164.0 ms      0.0%    
+top-produtos          257       74.8 ms       106.7 ms      187.3 ms      0.0%    
