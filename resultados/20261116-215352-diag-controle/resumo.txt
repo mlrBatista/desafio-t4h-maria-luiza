@@ -1,0 +1,17 @@
+Medição: diag-controle
+Carga: 20 usuários virtuais por 60s
+
+Requisições:        15629
+Requisições/s:      260.13
+Tempo de resposta:  mediana 81.4 ms | p95 160.9 ms | p99 190.7 ms
+Erros:              0.00%
+
+Por rota:
+rota                  req       mediana       p95           p99           erros   
+cliente               3926      70.7 ms       97.8 ms       158.9 ms      0.0%    
+cliente-por-email     2317      72.8 ms       99.8 ms       166.0 ms      0.0%    
+pedidos-do-cliente    3203      104.0 ms      183.5 ms      267.7 ms      0.0%    
+pedidos-por-status    2271      94.1 ms       168.1 ms      198.6 ms      0.0%    
+busca-produtos        2340      79.6 ms       107.1 ms      167.9 ms      0.0%    
+vendas-por-dia        1275      73.3 ms       98.7 ms       162.8 ms      0.0%    
+top-produtos          297       71.1 ms       99.1 ms       160.5 ms      0.0%    
