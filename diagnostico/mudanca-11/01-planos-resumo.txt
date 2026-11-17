@@ -1,0 +1,34 @@
+# Resumo gerado por diagnostico/mudanca-11/gerar-resumo-01.js a partir de 01-planos.txt. Nenhum número foi digitado.
+# "forma do plano" = os nós e as condições do plano, sem custos, tempos, linhas e buffers. Tempos em ms (Execution Time) das 3 execuções; consultas isoladas, sem carga.
+
+consulta                                             forma igual | COM o índice (3 execuções → mediana)            | SEM o índice (3 execuções → mediana)            | usa o idx_pedidos_criado_em_dia?
+GET /clientes?email=                                 sim         | 0.736 | 0.037 | 0.050 → 0.050                  | 0.035 | 0.056 | 0.726 → 0.056                  | não
+GET /clientes/:id                                    sim         | 0.020 | 0.022 | 0.031 → 0.022                  | 0.040 | 0.054 | 0.045 → 0.045                  | não
+GET /clientes/:id/pedidos (pedidos do cliente)       sim         | 0.809 | 0.137 | 0.094 → 0.137                  | 0.056 | 0.076 | 0.068 → 0.068                  | não
+GET /clientes/:id/pedidos (itens dos pedidos)        sim         | 3.626 | 0.087 | 0.083 → 0.087                  | 0.139 | 0.124 | 0.198 → 0.139                  | não
+GET /pedidos (total, pago)                           sim         | 0.047 | 0.027 | 0.047 → 0.047                  | 0.033 | 0.043 | 0.049 → 0.043                  | não
+GET /pedidos (página 1, pago)                        sim         | 0.092 | 0.049 | 0.047 → 0.049                  | 0.192 | 0.068 | 0.113 → 0.113                  | não
+GET /pedidos (página 500, pago)                      sim         | 4.478 | 3.046 | 3.061 → 3.061                  | 4.321 | 3.139 | 4.457 → 4.321                  | não
+GET /pedidos (página 1000, pago)                     sim         | 4.214 | 5.323 | 5.875 → 5.323                  | 6.971 | 6.290 | 5.247 → 6.290                  | não
+GET /pedidos (total, entregue)                       sim         | 0.028 | 0.016 | 0.019 → 0.019                  | 0.024 | 0.032 | 0.023 → 0.024                  | não
+GET /pedidos (página 1, entregue)                    sim         | 0.041 | 0.046 | 0.073 → 0.046                  | 0.090 | 0.047 | 0.045 → 0.047                  | não
+GET /pedidos (página 500, entregue)                  sim         | 7.208 | 2.091 | 1.971 → 2.091                  | 2.364 | 2.191 | 3.534 → 2.364                  | não
+GET /pedidos (página 1000, entregue)                 sim         | 10.342 | 3.973 | 3.666 → 3.973                 | 4.191 | 6.439 | 4.450 → 4.450                  | não
+GET /pedidos (total, cancelado)                      sim         | 0.037 | 0.277 | 0.053 → 0.053                  | 0.023 | 0.027 | 0.035 → 0.027                  | não
+GET /pedidos (página 1, cancelado)                   sim         | 0.099 | 0.078 | 0.087 → 0.087                  | 0.075 | 0.093 | 0.066 → 0.075                  | não
+GET /pedidos (página 500, cancelado)                 sim         | 4.015 | 1.892 | 1.842 → 1.892                  | 2.454 | 3.622 | 2.465 → 2.465                  | não
+GET /pedidos (página 1000, cancelado)                sim         | 6.669 | 4.148 | 6.735 → 6.669                  | 3.651 | 3.923 | 7.161 → 3.923                  | não
+GET /pedidos (total, pendente)                       sim         | 0.057 | 0.048 | 0.049 → 0.049                  | 0.024 | 0.015 | 0.015 → 0.015                  | não
+GET /pedidos (página 1, pendente)                    sim         | 0.121 | 0.083 | 0.106 → 0.106                  | 0.071 | 0.036 | 0.051 → 0.051                  | não
+GET /pedidos (página 500, pendente)                  sim         | 6.580 | 4.939 | 4.573 → 4.939                  | 2.679 | 2.243 | 3.446 → 2.679                  | não
+GET /pedidos (página 1000, pendente)                 sim         | 8.212 | 7.265 | 10.044 → 8.212                 | 3.939 | 4.335 | 4.154 → 4.154                  | não
+GET /produtos/busca                                  sim         | 3.843 | 2.584 | 2.338 → 2.584                  | 2.291 | 1.933 | 2.402 → 2.291                  | não
+GET /relatorios/vendas-por-dia (31 dias)             sim         | 0.360 | 0.184 | 0.248 → 0.248                  | 0.068 | 0.063 | 0.110 → 0.068                  | não
+GET /relatorios/top-produtos (limite 10)             sim         | 0.074 | 0.035 | 0.041 → 0.041                  | 0.047 | 0.054 | 0.052 → 0.052                  | não
+GET /relatorios/top-produtos (limite 50)             sim         | 1.071 | 1.131 | 0.113 → 1.071                  | 0.130 | 0.103 | 0.120 → 0.120                  | não
+
+consultas comparadas: 24 | com a mesma forma de plano COM e SEM o índice: 24 | com forma diferente: 0
+consultas cujo plano COM o índice usa o idx_pedidos_criado_em_dia: 0
+razão das medianas SEM/COM por consulta (conta): menor 0.11x | maior 2.31x
+maior razão: GET /pedidos (página 1, pago) (2.31x); como o ruído entre execuções de consultas de poucos milissegundos é grande, só a forma do plano é evidência confiável.
+índice depois do ROLLBACK (1 = existe): 1
