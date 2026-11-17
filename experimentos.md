@@ -392,6 +392,52 @@ Com 10 clientes e triggers, "só `pago`" × "sorteado" deu 1.01x (sorteado ÷ fi
 - **Hipóteses não verificadas:** o `REFRESH` normal trava as leituras por um bloqueio exclusivo na view durante a reconstrução (o observado foi a espera, com a latência máxima próxima da soma dos dois `REFRESH`); a fila no placar pode não ter aparecido porque o gargalo estava na confirmação das transações, e não na linha da tabela-resumo.
 - **O que fica para o artigo:** os relatórios em materialized view trocam atualidade por desempenho, e atualizá-los exige escolher entre travar as leituras (`REFRESH` normal) ou um refresh mais lento com índice único (`CONCURRENTLY`); o contador por trigger fica sempre correto, a um custo de escrita que, neste cenário, foi de ~20%.
 
+## Carga mista: escritas e `REFRESH` com a API sob carga
+
+A simulação acima mediu leituras e escritas separadas, direto no banco. Este diagnóstico mediu o efeito nas rotas da API: o `scripts/medir.sh` oficial, sem nenhuma mudança na régua, rodou enquanto outra carga acontecia no mesmo banco. Não é uma mudança: as pastas de `resultados/` usam o prefixo `diag-` e **não se comparam com as mudanças 01 a 10**, porque têm uma carga extra rodando junto. Resumo gerado por script em [diagnostico/carga-mista/resumo.txt](diagnostico/carga-mista/resumo.txt).
+
+- **Commits:** resultados em `9674199`, `9819836`, `38ae15d`, `aa1459a` e `3cdf9db` (uma série por commit) e diagnóstico em `0a341db`, em 16/11/2026.
+- **Como foi feito:** versão final (API com 0.5 CPU, banco com 1.0), sessão contínua, 60 s de aquecimento antes de cada série, computador na tomada. Nada foi gravado no repositório durante as medições (as 15 execuções registram `arquivos alterados sem commit: 0`) e todas mantiveram o contrato. As escritas usaram o `pgbench` num container separado; cada transação insere e apaga um pedido e confirma (`COMMIT`), então os totais não mudam. No fim, o banco foi recriado com `down -v` e comparado com o estado salvo antes (121 linhas e 5 impressões digitais md5 iguais, os 4 triggers ligados, contrato mantido).
+- **As 5 séries, nesta ordem, com 3 execuções cada:**
+  - **A · `diag-controle`:** só o `medir.sh`.
+  - **B · `diag-com-escritas`:** o `medir.sh` com escritas a uma taxa fixa de 50 transações por segundo (`pgbench -c 2 -R 50`), cobrindo o aquecimento e a medição.
+  - **C · `diag-refresh-normal`:** `REFRESH` normal das duas views ~45 s depois do início de cada execução, no meio dos 60 s medidos.
+  - **D · `diag-refresh-concorrente`:** `REFRESH CONCURRENTLY` só de `vendas_por_dia_mv` no mesmo momento (`top_produtos_mv` não tem índice único na aplicação).
+  - **A' · `diag-controle-depois`:** só o `medir.sh` de novo.
+- **Pastas:** A [1](resultados/20261116-215231-diag-controle), [2](resultados/20261116-215352-diag-controle), [3](resultados/20261116-215513-diag-controle) · B [1](resultados/20261116-215754-diag-com-escritas), [2](resultados/20261116-215915-diag-com-escritas), [3](resultados/20261116-220036-diag-com-escritas) · C [1](resultados/20261116-220353-diag-refresh-normal), [2](resultados/20261116-220514-diag-refresh-normal), [3](resultados/20261116-220634-diag-refresh-normal) · D [1](resultados/20261116-220904-diag-refresh-concorrente), [2](resultados/20261116-221024-diag-refresh-concorrente), [3](resultados/20261116-221145-diag-refresh-concorrente) · A' [1](resultados/20261116-223726-diag-controle-depois), [2](resultados/20261116-223847-diag-controle-depois), [3](resultados/20261116-224007-diag-controle-depois).
+
+| Métrica (mediana das 3) | A · controle | B · com escritas | C · `REFRESH` normal | D · `REFRESH CONCURRENTLY` | A' · controle depois |
+|---|---|---|---|---|---|
+| Requisições/s | 254.34 (250.28, 260.13, 254.34) | 233.13 (246.18, 229.21, 233.13) | 217.39 (208.88, 217.39, 217.85) | 232.55 (232.55, 229.07, 232.57) | 236.74 (243.62, 236.74, 235.19) |
+| Mediana geral | 82.3 ms | 86.2 ms | 85.4 ms | 85.2 ms | 85.5 ms |
+| p95 geral | 164.0 ms | 173.3 ms | 178.6 ms | 179.0 ms | 169.1 ms |
+| p99 geral | 195.4 ms | 203.4 ms | 269.8 ms | 215.4 ms | 197.9 ms |
+| CPU do banco (média / pico) | 58.2% / 73.6% | 73.9% / 92.2% | 79.1% / 103.5% | 79.1% / 103.2% | 73.7% / 86.2% |
+| Memória do banco | 391.4 MiB | 389.5 MiB | 398.5 MiB | 411.0 MiB | 453.5 MiB |
+| CPU da API (média / pico) | 49.6% / 52.0% | 49.1% / 53.5% | 45.8% / 52.4% | 48.7% / 52.2% | 49.5% / 52.7% |
+
+| Rota (mediana · p95 · p99, em ms) | A | B | C | D | A' |
+|---|---|---|---|---|---|
+| `/pedidos` | 94.8 · 170.4 · 198.6 | 103.6 · 183.6 · 236.2 | 104.0 · 197.8 · 291.0 | 105.7 · 198.8 · 262.3 | 103.8 · 182.2 · 207.9 |
+| `/clientes/:id/pedidos` | 104.9 · 186.5 · 253.9 | 112.7 · 194.2 · 261.6 | 112.1 · 205.9 · 296.1 | 110.6 · 203.4 · 278.5 | 108.7 · 187.1 · 226.6 |
+| `/relatorios/vendas-por-dia` | 73.3 · 100.0 · 162.8 | 76.8 · 104.6 · 176.9 | 76.9 · 104.6 · 206.6 | 73.7 · 103.5 · 160.4 | 76.1 · 98.9 · 158.0 |
+| `/relatorios/top-produtos` | 71.1 · 99.1 · 160.5 | 75.2 · 103.1 · 161.4 | 75.9 · 113.5 · 5178.7 | 74.8 · 106.7 · 176.6 | 75.1 · 100.5 · 139.1 |
+
+As outras três rotas estão no resumo. Na série C, o p99 de `top-produtos` por execução foi 6060.4, 5178.7 e 5058.3 ms.
+
+- **Escritas (série B):** o `pgbench` manteve 50.225 transações por segundo (mediana), com latência média de 8.410 ms e nenhuma falha.
+- **Duração dos `REFRESH` com a API lendo:** normal, mediana de 7533.543 ms para `top_produtos_mv` e 2432.095 ms para `vendas_por_dia_mv`; `CONCURRENTLY` de `vendas_por_dia_mv`, mediana de 13360.626 ms. Na série C, a latência máxima de `top-produtos` ficou entre 6741.1 e 7563.9 ms e a de `vendas-por-dia` entre 2230.8 e 2920.2 ms, iguais às durações dos `REFRESH`. Na série D, as máximas ficaram entre 141.3 e 261.9 ms.
+- **Os dois controles:** 254.34 e 236.74 req/s, −6.9%, com a CPU média do banco subindo de 58.2% para 73.7% e a memória de 391.4 para 453.5 MiB. A máquina e o banco não ficaram iguais durante a hora de teste; só diferenças maiores que essa variação podem ser atribuídas à carga extra.
+
+- **Conclusões:**
+  1. **O `REFRESH` normal trava os relatórios para quem usa a API.** Quem pediu o ranking durante o refresh esperou até ~7,5 s (o p99 da rota foi de 160.5 para 5178.7 ms), e a série C foi a única com vazão abaixo dos dois controles. A mediana quase não mudou (71.1 para 75.9 ms), porque a espera dura segundos num minuto de medição: o efeito aparece no p99.
+  2. **O `CONCURRENTLY` evita a espera**, com o p99 dos relatórios perto do controle, mas o refresh demora bem mais com a API lendo (~13,4 s, contra ~2,1 s com o banco parado na simulação).
+  3. **O custo do refresh cresce com o movimento:** o do ranking foi de ~3,1 s com o banco parado (simulação) para ~7,5 s com a API lendo. Em produção, o refresh deve ser `CONCURRENTLY` e agendado para horários de pouco movimento, e o ranking precisa de um índice único para isso.
+  4. **Escritas a 50 por segundo não tiveram efeito mensurável nas leituras.** A vazão da série B ficou entre os dois controles, e o aumento de `/pedidos` na mediana (94.8 para 103.6 ms) não pode ser atribuído às escritas, porque o controle depois deu 103.8 ms. Nesse volume, o custo do trigger fica do lado de quem grava (~20% na simulação), não de quem lê.
+  5. **A folga do banco absorveu o trabalho extra.** Na versão final, o banco fica em ~58% de CPU; durante as escritas e os refresh, subiu para ~74–79% de média, e só as rotas de relatório travadas mudaram muito. Na configuração da mudança 10 (API com 1.0 CPU), o banco já estava a ~101%, sem folga; a hipótese, não medida, é que o mesmo refresh ou as mesmas escritas atrapalhariam todas as rotas nessa configuração.
+- **Hipóteses não verificadas:** a diferença entre os controles pode vir de linhas mortas, do autovacuum ou do cache do banco depois das escritas e dos refresh; o `CONCURRENTLY` demora mais sob carga por disputar a CPU com as leituras.
+- **Observações:** passaram-se ~23 minutos entre a série D e a A' (tempo entre as chamadas do operador; cada medição está íntegra, com o `recursos.csv` cobrindo ~61 s). A primeira tentativa da série B parou antes de medir, por um filtro de verificação errado, e foi refeita.
+
 ## Séries que não entram nas comparações
 
 Nem toda medição feita entrou nas tabelas acima. Esta seção lista todas as que ficaram de fora e o motivo, para que nenhuma pasta (ou ausência de pasta) fique sem explicação.

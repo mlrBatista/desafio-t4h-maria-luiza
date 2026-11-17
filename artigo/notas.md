@@ -77,6 +77,50 @@ Ideias e trechos guardados durante o trabalho, para usar em `artigo/artigo.md`. 
 
 **Para o `proximos-testes.md`:** índice único em `top_produtos_mv` (habilita `CONCURRENTLY`) e um agendamento de refresh; repetir a simulação com leituras e escritas ao mesmo tempo pela API (não feito: aqui, leituras e escritas foram medidas separadas, direto no banco).
 
+## Carga mista: o refresh e as escritas vistos pela API (seções 6 e 7)
+
+**Onde está:** `experimentos.md`, seção "Carga mista"; resumo em `diagnostico/carga-mista/resumo.txt`; pastas `resultados/*-diag-*` (não se comparam com as mudanças).
+
+**Os números que importam:**
+- `REFRESH` normal com a API lendo: o ranking (`/relatorios/top-produtos`) teve p99 de 5178.7 ms, contra 160.5 ms no controle; latência máxima de até 7563.9 ms, igual à duração do refresh (mediana de 7533.543 ms). A mediana quase não mudou (71.1 → 75.9 ms).
+- `REFRESH CONCURRENTLY` (só vendas por dia): p99 dos relatórios perto do controle; o refresh levou 13360.626 ms com carga, contra ~2,1 s parado.
+- O refresh do ranking: ~3,1 s com o banco parado (simulação) e ~7,5 s com a API lendo.
+- Escritas a 50/s: vazão 233.13, entre os controles (254.34 e 236.74); sem efeito mensurável nas leituras.
+- Os controles variaram 6.9% em uma hora, mesmo com todos os cuidados.
+
+**Ideias para o texto:**
+- A média esconde, o p99 mostra: 1% das pessoas esperou mais de 5 s, justamente as que chegaram durante o refresh. Bom exemplo para explicar percentis no artigo.
+- A folga do banco (~58% na versão final) absorveu escritas e refresh; com a API em 1.0 CPU (mudança 10), o banco já estava a ~101%, sem folga. A versão final é mais barata e também deixa folga para manutenção (hipótese, não medida com a API em 1.0).
+- Limite do método: efeitos menores que ~7–8% não podem ser afirmados neste ambiente (casos da 09 e das escritas a 50/s); o A-B-A evitou atribuir às escritas uma deriva da máquina (`/pedidos` 103.6 com escritas × 103.8 no controle depois).
+
+**Recomendação de produção (seção 5 ou 7):**
+1. índice único no ranking, para permitir `REFRESH CONCURRENTLY` nas duas views;
+2. refresh `CONCURRENTLY` agendado para horários de pouco movimento;
+3. monitorar o p99 das rotas de relatório, não só a média;
+4. ao escalar a API, garantir folga no banco para essas tarefas, ou escalar os dois juntos.
+
+**Trecho sugerido (seção 7):**
+> Com a API sob carga, um `REFRESH` normal deixou o ranking de mais vendidos travado por até ~7,5 s: o p99 da rota foi de 160 ms para 5,2 s, embora a mediana quase não mudasse. O `REFRESH CONCURRENTLY` evitou a espera, ao custo de um refresh mais longo (~13 s com carga). Escritas a 50 por segundo não tiveram efeito mensurável nas leituras. Em produção, os relatórios precisariam de um índice único no ranking e de um refresh `CONCURRENTLY` agendado para horários de pouco movimento.
+
+## A aplicação entregue não atualiza as views (seção 7, Limites; ponto que um avaliador pode perguntar)
+
+**O fato.** Nenhum `REFRESH` é executado na aplicação: não há refresh na API, nos `.sql` de `banco/` nem no `docker-compose.yml` (conferido com busca no código em 16/11/2026). As views `top_produtos_mv` e `vendas_por_dia_mv` são criadas uma vez, quando o banco nasce. O `REFRESH CONCURRENTLY` só foi usado nos diagnósticos (simulação de escritas e carga mista).
+
+**Índices únicos.** `vendas_por_dia_mv` tem índice único em `dia` (`banco/05-vendas-por-dia.sql`, `idx_vendas_por_dia_mv_dia`), então já permite o `CONCURRENTLY`. `top_produtos_mv` só tem um índice comum (`banco/04-top-produtos.sql`, `idx_top_produtos_mv_receita`), então o `CONCURRENTLY` não funciona nela. Nos testes, o índice único do ranking foi criado só na cópia do banco, que depois foi apagada.
+
+**Por que não é problema no desafio.** A carga só lê e os dados nunca mudam: as views criadas na inicialização ficam corretas durante todo o teste.
+
+**O que faltaria para produção.**
+1. Índice único no ranking (cada produto aparece uma vez na view): `CREATE UNIQUE INDEX ON top_produtos_mv (id);`
+2. Um agendador rodando `REFRESH MATERIALIZED VIEW CONCURRENTLY` nas duas views em horários de pouco movimento (cron no servidor, extensão de agendamento do PostgreSQL ou job da aplicação). É uma peça nova, com custo de operação e monitoramento (alertar se o refresh parar).
+
+**Por que não foi implementado.** Sem escritas, o teste do desafio não mediria nenhum efeito; o agendador é uma peça nova; e o índice único exigiria um `.sql` novo e recriar o banco, sem efeito na carga.
+
+**Trecho sugerido:**
+> A aplicação entregue não atualiza as views: no desafio, os dados não mudam. Em produção, seria preciso um índice único em `top_produtos_mv` e um `REFRESH ... CONCURRENTLY` agendado para horários de pouco movimento; as medições mostram que o refresh normal travaria o ranking por até ~7,5 s com a API sob carga, e que o `CONCURRENTLY` evita essa espera.
+
+**Para o `proximos-testes.md`:** ficha "Atualização das views em produção" (índice único no ranking + agendamento do `REFRESH CONCURRENTLY`), com a evidência da simulação e da carga mista, como testar (escritas reais e refresh agendado durante a carga) e o que precisaria (um agendador e o acordo sobre o atraso aceitável dos relatórios).
+
 ## Mudança 10 e a escolha da versão final (seções 5 e 6)
 
 - 0.5 → 1.0 CPU na API: 246.53 → 473.73 req/s (controle depois: 273.22). CPU total reservada de 1.5 para 2.0 (+33%) para +82% de vazão (259.88 → 473.73, média dos controles); de ~173 para ~237 req/s por CPU. O banco virou o limite (~101%).
