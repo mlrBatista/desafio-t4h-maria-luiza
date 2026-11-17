@@ -1,0 +1,1 @@
+medir_inicio_epoch=1794877236.125116650 pgbench_inicio_epoch=1794877236.778311500

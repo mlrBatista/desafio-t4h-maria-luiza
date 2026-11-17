@@ -1,0 +1,196 @@
+# RESUMO do diagnóstico de carga mista, gerado por diagnostico/carga-mista/gerar-resumo.js a partir de resultados/*-diag-* e das saídas desta pasta. Nenhum número foi digitado.
+# Data e hora da geração: Mon Nov 16 2026 22:45:10 GMT-0300 (Brasilia Standard Time) | Commit (HEAD): 3cdf9db
+# NÃO é uma mudança e NÃO se compara com as séries das mudanças 01 a 10 (rótulos diag-*). Mesma régua: scripts/medir.sh, 20 VUs, 60 s, semente 42, aquecimento de 15 s do medir.sh mais 60 s de aquecimento sem gravar antes de cada série.
+# Cenário: outra carga roda no MESMO banco (o banco loja da aplicação, com 1 CPU e 512 MB) enquanto o medir.sh mede a API (0.5 CPU e 256 MB). O banco foi recriado com down -v no fim.
+# O pgbench roda em um container separado (postgres:16.4, mesma rede), com o banco como argumento final (sem -d, que liga a depuração).
+# Entre o fim da série D e o aquecimento da série A' passaram-se ~23 min (tempo entre as chamadas do operador); a execução de cada medição está íntegra (cada recursos.csv cobre ~61 s).
+
+== 1. MEDIANAS DAS 3 EXECUÇÕES DE CADA SÉRIE (valores por execução → mediana) ==
+
+A · diag-controle (só o medir.sh)
+  req/s                                      250.28 | 260.13 | 254.34       → 254.34
+  requisições                                15032 | 15629 | 15280          → 15280
+  mediana geral (ms)                         83.2 | 81.4 | 82.3             → 82.3
+  p95 geral (ms)                             167.3 | 160.9 | 164.0          → 164.0
+  p99 geral (ms)                             195.4 | 190.7 | 196.4          → 195.4
+  CPU média do banco (%)                     59.6 | 58.2 | 57.1             → 58.2
+  pico de CPU do banco (% , recursos.csv)    74.9 | 73.6 | 73.5             → 73.6
+  memória média do banco (MiB)               373.3 | 391.4 | 412.5          → 391.4
+  CPU média da API (%)                       49.0 | 50.7 | 49.6             → 49.6
+  pico de CPU da API (% , recursos.csv)      52.0 | 52.3 | 52.0             → 52.0
+  memória média da API (MiB)                 27.5 | 27.7 | 27.9             → 27.7
+  conferência dos contexto.txt: 20261116-215231 sem commit=0 commit=253a2db contrato mantido=true ; 20261116-215352 sem commit=0 commit=253a2db contrato mantido=true ; 20261116-215513 sem commit=0 commit=253a2db contrato mantido=true
+
+B · diag-com-escritas (+ pgbench de escrita, -c 2 -T 75 -R 50)
+  req/s                                      246.18 | 229.21 | 233.13       → 233.13
+  requisições                                14790 | 13768 | 13994          → 13994
+  mediana geral (ms)                         83.9 | 87.5 | 86.2             → 86.2
+  p95 geral (ms)                             172.0 | 173.3 | 173.6          → 173.3
+  p99 geral (ms)                             203.4 | 203.6 | 203.2          → 203.4
+  CPU média do banco (%)                     73.8 | 73.9 | 81.2             → 73.9
+  pico de CPU do banco (% , recursos.csv)    90.1 | 92.9 | 92.2             → 92.2
+  memória média do banco (MiB)               389.5 | 394.3 | 372.1          → 389.5
+  CPU média da API (%)                       50.5 | 49.0 | 49.1             → 49.1
+  pico de CPU da API (% , recursos.csv)      53.5 | 52.1 | 53.8             → 53.5
+  memória média da API (MiB)                 27.6 | 27.8 | 27.6             → 27.6
+  conferência dos contexto.txt: 20261116-215754 sem commit=0 commit=253a2db contrato mantido=true ; 20261116-215915 sem commit=0 commit=253a2db contrato mantido=true ; 20261116-220036 sem commit=0 commit=253a2db contrato mantido=true
+
+C · diag-refresh-normal (+ REFRESH normal das 2 views, ~45 s depois do início)
+  req/s                                      208.88 | 217.39 | 217.85       → 217.39
+  requisições                                12541 | 13061 | 13086          → 13061
+  mediana geral (ms)                         87.7 | 85.4 | 84.9             → 85.4
+  p95 geral (ms)                             180.4 | 178.6 | 178.6          → 178.6
+  p99 geral (ms)                             262.1 | 269.8 | 281.1          → 269.8
+  CPU média do banco (%)                     77.1 | 79.3 | 79.1             → 79.1
+  pico de CPU do banco (% , recursos.csv)    100.3 | 104.2 | 103.5          → 103.5
+  memória média do banco (MiB)               381.6 | 398.5 | 427.4          → 398.5
+  CPU média da API (%)                       46.3 | 45.8 | 44.8             → 45.8
+  pico de CPU da API (% , recursos.csv)      52.4 | 52.0 | 54.0             → 52.4
+  memória média da API (MiB)                 27.8 | 27.7 | 27.8             → 27.8
+  conferência dos contexto.txt: 20261116-220353 sem commit=0 commit=253a2db contrato mantido=true ; 20261116-220514 sem commit=0 commit=253a2db contrato mantido=true ; 20261116-220634 sem commit=0 commit=253a2db contrato mantido=true
+
+D · diag-refresh-concorrente (+ REFRESH CONCURRENTLY de vendas_por_dia_mv, ~45 s depois do início)
+  req/s                                      232.55 | 229.07 | 232.57       → 232.55
+  requisições                                13968 | 13765 | 13973          → 13968
+  mediana geral (ms)                         85.2 | 86.2 | 84.9             → 85.2
+  p95 geral (ms)                             176.9 | 179.0 | 183.4          → 179.0
+  p99 geral (ms)                             215.4 | 211.7 | 238.0          → 215.4
+  CPU média do banco (%)                     79.0 | 79.1 | 80.3             → 79.1
+  pico de CPU do banco (% , recursos.csv)    102.7 | 103.3 | 103.2          → 103.2
+  memória média do banco (MiB)               411.0 | 427.0 | 406.0          → 411.0
+  CPU média da API (%)                       49.0 | 48.5 | 48.7             → 48.7
+  pico de CPU da API (% , recursos.csv)      52.2 | 51.3 | 56.2             → 52.2
+  memória média da API (MiB)                 27.9 | 27.8 | 27.9             → 27.9
+  conferência dos contexto.txt: 20261116-220904 sem commit=0 commit=253a2db contrato mantido=true ; 20261116-221024 sem commit=0 commit=253a2db contrato mantido=true ; 20261116-221145 sem commit=0 commit=253a2db contrato mantido=true
+
+A' · diag-controle-depois (só o medir.sh, para conferir a estabilidade)
+  req/s                                      243.62 | 236.74 | 235.19       → 236.74
+  requisições                                14632 | 14220 | 14131          → 14220
+  mediana geral (ms)                         83.9 | 85.5 | 85.5             → 85.5
+  p95 geral (ms)                             164.9 | 170.2 | 169.1          → 169.1
+  p99 geral (ms)                             194.0 | 199.3 | 197.9          → 197.9
+  CPU média do banco (%)                     70.8 | 73.7 | 74.4             → 73.7
+  pico de CPU do banco (% , recursos.csv)    85.7 | 86.9 | 86.2             → 86.2
+  memória média do banco (MiB)               449.7 | 453.5 | 453.9          → 453.5
+  CPU média da API (%)                       49.5 | 50.7 | 49.0             → 49.5
+  pico de CPU da API (% , recursos.csv)      54.2 | 52.7 | 52.2             → 52.7
+  memória média da API (MiB)                 28.1 | 28.0 | 28.0             → 28.0
+  conferência dos contexto.txt: 20261116-223726 sem commit=0 commit=253a2db contrato mantido=true ; 20261116-223847 sem commit=0 commit=253a2db contrato mantido=true ; 20261116-224007 sem commit=0 commit=253a2db contrato mantido=true
+
+== 2. MEDIANA, p95 E p99 DE CADA ROTA, POR SÉRIE (mediana das 3 execuções, em ms) ==
+
+/clientes/:id
+  A · diag-controle              mediana     72.1 | p95     99.3 | p99    158.9   [medianas por execução: 73.2, 70.7, 72.1]
+  B · diag-com-escritas          mediana     75.5 | p95    103.0 | p99    163.7   [medianas por execução: 71.6, 77.5, 75.5]
+  C · diag-refresh-normal        mediana     75.3 | p95    102.9 | p99    177.1   [medianas por execução: 77.2, 75.3, 74.2]
+  D · diag-refresh-concorrente   mediana     73.0 | p95    102.7 | p99    170.2   [medianas por execução: 74.0, 73.0, 71.9]
+  A' · diag-controle-depois      mediana     75.1 | p95     99.5 | p99    164.9   [medianas por execução: 74.4, 75.1, 75.7]
+
+/clientes?email=
+  A · diag-controle              mediana     73.4 | p95    100.2 | p99    166.0   [medianas por execução: 73.4, 72.8, 74.6]
+  B · diag-com-escritas          mediana     74.9 | p95    103.9 | p99    171.2   [medianas por execução: 74.0, 76.9, 74.9]
+  C · diag-refresh-normal        mediana     76.1 | p95    103.3 | p99    174.9   [medianas por execução: 77.1, 76.1, 74.9]
+  D · diag-refresh-concorrente   mediana     74.2 | p95    103.6 | p99    165.1   [medianas por execução: 76.1, 74.2, 72.1]
+  A' · diag-controle-depois      mediana     75.8 | p95    100.7 | p99    169.7   [medianas por execução: 75.0, 75.8, 76.6]
+
+/clientes/:id/pedidos
+  A · diag-controle              mediana    104.9 | p95    186.5 | p99    253.9   [medianas por execução: 109.0, 104.0, 104.9]
+  B · diag-com-escritas          mediana    112.7 | p95    194.2 | p99    261.6   [medianas por execução: 109.0, 114.0, 112.7]
+  C · diag-refresh-normal        mediana    112.1 | p95    205.9 | p99    296.1   [medianas por execução: 113.2, 112.1, 108.2]
+  D · diag-refresh-concorrente   mediana    110.6 | p95    203.4 | p99    278.5   [medianas por execução: 112.5, 110.6, 110.4]
+  A' · diag-controle-depois      mediana    108.7 | p95    187.1 | p99    226.6   [medianas por execução: 106.8, 108.7, 109.0]
+
+/pedidos
+  A · diag-controle              mediana     94.8 | p95    170.4 | p99    198.6   [medianas por execução: 95.7, 94.1, 94.8]
+  B · diag-com-escritas          mediana    103.6 | p95    183.6 | p99    236.2   [medianas por execução: 99.4, 103.6, 104.4]
+  C · diag-refresh-normal        mediana    104.0 | p95    197.8 | p99    291.0   [medianas por execução: 106.1, 102.9, 104.0]
+  D · diag-refresh-concorrente   mediana    105.7 | p95    198.8 | p99    262.3   [medianas por execução: 105.7, 105.8, 104.1]
+  A' · diag-controle-depois      mediana    103.8 | p95    182.2 | p99    207.9   [medianas por execução: 102.2, 104.3, 103.8]
+
+/produtos/busca
+  A · diag-controle              mediana     80.4 | p95    110.4 | p99    174.9   [medianas por execução: 81.0, 79.6, 80.4]
+  B · diag-com-escritas          mediana     84.2 | p95    140.2 | p99    184.0   [medianas por execução: 81.4, 85.4, 84.2]
+  C · diag-refresh-normal        mediana     82.4 | p95    136.5 | p99    195.7   [medianas por execução: 84.7, 82.2, 82.4]
+  D · diag-refresh-concorrente   mediana     84.0 | p95    132.0 | p99    182.3   [medianas por execução: 83.5, 85.0, 84.0]
+  A' · diag-controle-depois      mediana     82.7 | p95    110.8 | p99    173.7   [medianas por execução: 81.6, 83.3, 82.7]
+
+/relatorios/vendas-por-dia
+  A · diag-controle              mediana     73.3 | p95    100.0 | p99    162.8   [medianas por execução: 74.0, 73.3, 71.7]
+  B · diag-com-escritas          mediana     76.8 | p95    104.6 | p99    176.9   [medianas por execução: 75.2, 77.0, 76.8]
+  C · diag-refresh-normal        mediana     76.9 | p95    104.6 | p99    206.6   [medianas por execução: 77.2, 76.3, 76.9]
+  D · diag-refresh-concorrente   mediana     73.7 | p95    103.5 | p99    160.4   [medianas por execução: 73.0, 73.9, 73.7]
+  A' · diag-controle-depois      mediana     76.1 | p95     98.9 | p99    158.0   [medianas por execução: 75.7, 76.1, 76.4]
+
+/relatorios/top-produtos
+  A · diag-controle              mediana     71.1 | p95     99.1 | p99    160.5   [medianas por execução: 71.0, 71.1, 72.4]
+  B · diag-com-escritas          mediana     75.2 | p95    103.1 | p99    161.4   [medianas por execução: 73.0, 77.8, 75.2]
+  C · diag-refresh-normal        mediana     75.9 | p95    113.5 | p99   5178.7   [medianas por execução: 78.3, 75.9, 75.2]
+  D · diag-refresh-concorrente   mediana     74.8 | p95    106.7 | p99    176.6   [medianas por execução: 75.8, 72.8, 74.8]
+  A' · diag-controle-depois      mediana     75.1 | p95    100.5 | p99    139.1   [medianas por execução: 75.1, 74.2, 75.4]
+
+== 3. OS DOIS CONTROLES (A e A') ==
+  req/s: A 254.34 (faixa 250.28 a 260.13) | A' 236.74 (faixa 235.19 a 243.62) | diferença A'/A: -6.9%
+  mediana geral (ms): A 82.3 | A' 85.5; p95: A 164.0 | A' 169.1; p99: A 195.4 | A' 197.9
+  Diferença de req/s de cada série contra o controle A (conta sobre as medianas):
+    A · diag-controle                  254.34 req/s | 0.0% contra A | 7.4% contra A'
+    B · diag-com-escritas              233.13 req/s | -8.3% contra A | -1.5% contra A'
+    C · diag-refresh-normal            217.39 req/s | -14.5% contra A | -8.2% contra A'
+    D · diag-refresh-concorrente       232.55 req/s | -8.6% contra A | -1.8% contra A'
+    A' · diag-controle-depois          236.74 req/s | -6.9% contra A | 0.0% contra A'
+
+== 4. SÉRIE B: ESCRITAS DO PGBENCH (-c 2 -T 75 -R 50) ==
+  execução 1: 3849 transações | 51.335 tps | latência média 6.865 ms | falhas 0 | atraso da cadência (schedule lag) médio 0.589 ms, máximo 83.866 ms
+  execução 2: 3765 transações | 50.225 tps | latência média 8.410 ms | falhas 0 | atraso da cadência (schedule lag) médio 1.690 ms, máximo 217.371 ms
+  execução 3: 3715 transações | 49.537 tps | latência média 8.442 ms | falhas 0 | atraso da cadência (schedule lag) médio 1.307 ms, máximo 157.428 ms
+  mediana: 50.225 tps | latência média 8.410 ms
+  (cada transação = 1 INSERT e 1 DELETE de um pedido, que dispara os triggers de pedidos_por_status; não deixa dados novos.)
+
+== 5. SÉRIES C E D: DURAÇÃO DE CADA REFRESH COM A API LENDO ==
+
+  diag-refresh-normal
+    execução 1: o REFRESH começou 45.0 s depois do início do medir.sh e a sequência durou 10.652 s no total (inclui o psql)
+      REFRESH MATERIALIZED VIEW top_produtos_mv: 7693.883 ms
+      REFRESH MATERIALIZED VIEW vendas_por_dia_mv: 2432.095 ms
+    execução 2: o REFRESH começou 45.0 s depois do início do medir.sh e a sequência durou 10.142 s no total (inclui o psql)
+      REFRESH MATERIALIZED VIEW top_produtos_mv: 7450.265 ms
+      REFRESH MATERIALIZED VIEW vendas_por_dia_mv: 2296.904 ms
+    execução 3: o REFRESH começou 45.0 s depois do início do medir.sh e a sequência durou 10.548 s no total (inclui o psql)
+      REFRESH MATERIALIZED VIEW top_produtos_mv: 7533.543 ms
+      REFRESH MATERIALIZED VIEW vendas_por_dia_mv: 2552.970 ms
+    mediana de REFRESH MATERIALIZED VIEW top_produtos_mv: 7533.543 ms (3 execuções: 7693.883 | 7450.265 | 7533.543)
+    mediana de REFRESH MATERIALIZED VIEW vendas_por_dia_mv: 2432.095 ms (3 execuções: 2432.095 | 2296.904 | 2552.970)
+
+  diag-refresh-concorrente
+    execução 1: o REFRESH começou 45.0 s depois do início do medir.sh e a sequência durou 13.757 s no total (inclui o psql)
+      REFRESH MATERIALIZED VIEW CONCURRENTLY vendas_por_dia_mv: 13360.626 ms
+    execução 2: o REFRESH começou 45.0 s depois do início do medir.sh e a sequência durou 13.507 s no total (inclui o psql)
+      REFRESH MATERIALIZED VIEW CONCURRENTLY vendas_por_dia_mv: 13080.515 ms
+    execução 3: o REFRESH começou 45.0 s depois do início do medir.sh e a sequência durou 14.817 s no total (inclui o psql)
+      REFRESH MATERIALIZED VIEW CONCURRENTLY vendas_por_dia_mv: 14352.782 ms
+    mediana de REFRESH MATERIALIZED VIEW CONCURRENTLY vendas_por_dia_mv: 13360.626 ms (3 execuções: 13360.626 | 13080.515 | 14352.782)
+
+  As leituras das rotas de relatório esperaram durante o REFRESH? Latência MÁXIMA e p99 de cada execução (resumo-k6.json de cada pasta), em ms:
+    A · diag-controle              /relatorios/top-produtos     máxima por execução: 172.8 | 178.0 | 183.6      | p99 por execução: 155.6 | 160.5 | 162.5
+    A · diag-controle              /relatorios/vendas-por-dia   máxima por execução: 182.4 | 211.0 | 198.4      | p99 por execução: 158.8 | 162.8 | 174.6
+    B · diag-com-escritas          /relatorios/top-produtos     máxima por execução: 178.5 | 176.0 | 204.7      | p99 por execução: 140.1 | 161.4 | 171.6
+    B · diag-com-escritas          /relatorios/vendas-por-dia   máxima por execução: 272.4 | 280.8 | 203.9      | p99 por execução: 177.4 | 176.9 | 162.4
+    C · diag-refresh-normal        /relatorios/top-produtos     máxima por execução: 7563.9 | 6741.1 | 7404.7   | p99 por execução: 6060.4 | 5178.7 | 5058.3
+    C · diag-refresh-normal        /relatorios/vendas-por-dia   máxima por execução: 2427.6 | 2230.8 | 2920.2   | p99 por execução: 206.6 | 195.8 | 829.1
+    D · diag-refresh-concorrente   /relatorios/top-produtos     máxima por execução: 141.3 | 210.6 | 257.1      | p99 por execução: 117.0 | 176.6 | 187.3
+    D · diag-refresh-concorrente   /relatorios/vendas-por-dia   máxima por execução: 196.2 | 197.0 | 261.9      | p99 por execução: 121.2 | 160.4 | 164.0
+    A' · diag-controle-depois      /relatorios/top-produtos     máxima por execução: 187.4 | 185.8 | 181.5      | p99 por execução: 139.0 | 158.2 | 139.1
+    A' · diag-controle-depois      /relatorios/vendas-por-dia   máxima por execução: 203.5 | 194.0 | 278.3      | p99 por execução: 158.0 | 157.0 | 166.8
+
+  Referência, sem carga (diagnostico/simulacao-escritas/07-resumo.txt, cópia do banco, 3 rodadas): ver aquele arquivo; os números não foram copiados para cá.
+
+== 6. ESTADO DO BANCO ==
+  antes x depois de recriar com down -v (sem as linhas "Time:" e o cabeçalho): 121 linhas x 121 linhas | IDÊNTICOS
+  antes x fim das medições (antes de recriar): 121 linhas x 121 linhas | IDÊNTICOS
+  md5 (pedidos, itens_pedido, pedidos_por_status, top_produtos_mv, vendas_por_dia_mv): antes 37653c23 cacea8d4 ddd3e384 c3be7b22 c7f95c81 | fim das medições 37653c23 cacea8d4 ddd3e384 c3be7b22 c7f95c81 | depois 37653c23 cacea8d4 ddd3e384 c3be7b22 c7f95c81
+  triggers antes: pedidos_por_status_delete | O; pedidos_por_status_insert | O; pedidos_por_status_truncate | O; pedidos_por_status_update | O
+  triggers no fim das medições: pedidos_por_status_delete | O; pedidos_por_status_insert | O; pedidos_por_status_truncate | O; pedidos_por_status_update | O
+  triggers depois: pedidos_por_status_delete | O; pedidos_por_status_insert | O; pedidos_por_status_truncate | O; pedidos_por_status_update | O
+  # Limites: api NanoCpus=500000000 Memory=268435456;banco NanoCpus=1000000000 Memory=536870912;
+  # Limites: api NanoCpus=500000000 Memory=268435456;banco NanoCpus=1000000000 Memory=536870912;
+  # Hash de api/src/*.js: container 27cc7c2eb8249810 | HEAD 27cc7c2eb8249810
+  # Hash de api/src/*.js: container 27cc7c2eb8249810 | HEAD 27cc7c2eb8249810

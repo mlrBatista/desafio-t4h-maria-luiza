@@ -1,0 +1,15 @@
+pgbench (16.4 (Debian 16.4-1.pgdg120+2))
+transaction type: /s/escrita.sql
+scaling factor: 1
+query mode: simple
+number of clients: 2
+number of threads: 1
+maximum number of tries: 1
+duration: 75 s
+number of transactions actually processed: 3765
+number of failed transactions: 0 (0.000%)
+latency average = 8.410 ms
+latency stddev = 16.232 ms
+rate limit schedule lag: avg 1.690 (max 217.371) ms
+initial connection time = 10.976 ms
+tps = 50.225499 (without initial connection time)

@@ -1,0 +1,1 @@
+medir_inicio_epoch=1794877905.504127753 refresh_inicio_epoch=1794877950.520604361 refresh_fim_epoch=1794877965.337777460 (inicio 2026-11-16 22:12:30)

@@ -1,0 +1,149 @@
+# ESTADO DO BANCO loja DEPOIS de recriar com down -v e up -d --build (passo 3). Script: diagnostico/simulacao-escritas/00-estado.sql, só leitura.
+# Commit (HEAD): 253a2db | Data e hora: 2026-11-16 22:43:43 -0300
+# Limites: api NanoCpus=500000000 Memory=268435456;banco NanoCpus=1000000000 Memory=536870912;
+# Hash de api/src/*.js: container 27cc7c2eb8249810 | HEAD 27cc7c2eb8249810
+
+Timing is on.
+##### banco
+ current_database 
+------------------
+ loja
+(1 row)
+
+Time: 0.776 ms
+##### tabela-resumo pedidos_por_status
+  status   | total  
+-----------+--------
+ cancelado |  50000
+ entregue  | 125000
+ pago      | 300000
+ pendente  |  25000
+(4 rows)
+
+Time: 1.295 ms
+##### count(*) de pedidos por status
+  status   |   n    
+-----------+--------
+ cancelado |  50000
+ entregue  | 125000
+ pago      | 300000
+ pendente  |  25000
+(4 rows)
+
+Time: 64.757 ms
+##### linhas das tabelas
+ pedidos | itens_pedido | clientes | produtos 
+---------+--------------+----------+----------
+  500000 |      1500000 |   100000 |    20000
+(1 row)
+
+Time: 297.434 ms
+##### top 3 de top_produtos_mv
+ id  |           nome            | unidades | receita_centavos 
+-----+---------------------------+----------+------------------
+ 167 | Mochila Slim Modelo 167   |    10052 |       4882457440
+  43 | Teclado Premium Modelo 43 |    10051 |       4685374160
+  55 | Estante Premium Modelo 55 |    10051 |       4386658440
+(3 rows)
+
+Time: 1.517 ms
+##### 3 ultimas linhas de vendas_por_dia_mv
+    dia     | pedidos | itens | receita_centavos 
+------------+---------+-------+------------------
+ 2025-12-31 |     619 |  3721 |        915440530
+ 2025-12-30 |     609 |  3652 |        896144770
+ 2025-12-29 |     619 |  3709 |        916844020
+(3 rows)
+
+Time: 1.684 ms
+##### linhas das views
+ top_produtos_mv | vendas_por_dia_mv 
+-----------------+-------------------
+           19206 |               731
+(1 row)
+
+Time: 4.085 ms
+##### triggers de pedidos e estado (tgenabled: O = ligado, D = desligado)
+           tgname            | tgenabled 
+-----------------------------+-----------
+ pedidos_por_status_delete   | O
+ pedidos_por_status_insert   | O
+ pedidos_por_status_truncate | O
+ pedidos_por_status_update   | O
+(4 rows)
+
+Time: 1.133 ms
+##### descricao da tabela pedidos (inclui a secao Triggers)
+                           Table "public.pedidos"
+   Column    |            Type             | Collation | Nullable | Default 
+-------------+-----------------------------+-----------+----------+---------
+ id          | integer                     |           | not null | 
+ cliente_id  | integer                     |           | not null | 
+ status      | text                        |           | not null | 
+ criado_em   | timestamp without time zone |           | not null | 
+ observacoes | text                        |           | not null | 
+Indexes:
+    "pedidos_pkey" PRIMARY KEY, btree (id)
+    "idx_pedidos_cliente_id" btree (cliente_id)
+    "idx_pedidos_criado_em_dia" btree ((criado_em::date))
+    "idx_pedidos_status_criado_em_cobrindo" btree (status, criado_em DESC, id DESC) INCLUDE (cliente_id)
+Foreign-key constraints:
+    "pedidos_cliente_id_fkey" FOREIGN KEY (cliente_id) REFERENCES clientes(id)
+Referenced by:
+    TABLE "itens_pedido" CONSTRAINT "itens_pedido_pedido_id_fkey" FOREIGN KEY (pedido_id) REFERENCES pedidos(id)
+Triggers:
+    pedidos_por_status_delete AFTER DELETE ON pedidos FOR EACH ROW EXECUTE FUNCTION pedidos_por_status_ajusta()
+    pedidos_por_status_insert AFTER INSERT ON pedidos FOR EACH ROW EXECUTE FUNCTION pedidos_por_status_ajusta()
+    pedidos_por_status_truncate AFTER TRUNCATE ON pedidos FOR EACH STATEMENT EXECUTE FUNCTION pedidos_por_status_zera()
+    pedidos_por_status_update AFTER UPDATE OF status ON pedidos FOR EACH ROW WHEN (old.status IS DISTINCT FROM new.status) EXECUTE FUNCTION pedidos_por_status_ajusta()
+
+##### indices do schema public
+               indexname               
+---------------------------------------
+ clientes_pkey
+ idx_clientes_email_lower
+ idx_itens_pedido_pedido_id
+ idx_pedidos_cliente_id
+ idx_pedidos_criado_em_dia
+ idx_pedidos_status_criado_em_cobrindo
+ idx_produtos_nome_trgm
+ idx_top_produtos_mv_receita
+ idx_vendas_por_dia_mv_dia
+ itens_pedido_pkey
+ pedidos_pkey
+ pedidos_por_status_pkey
+ produtos_pkey
+(13 rows)
+
+Time: 6.773 ms
+##### impressoes digitais (md5) do conteudo
+           md5_pedidos            
+----------------------------------
+ 37653c237383dfd1953215caf0353c9d
+(1 row)
+
+Time: 489.937 ms
+         md5_itens_pedido         
+----------------------------------
+ cacea8d4afaae7d2fb79c8196e90e8e8
+(1 row)
+
+Time: 953.903 ms
+      md5_pedidos_por_status      
+----------------------------------
+ ddd3e384ac81d8c0a528fc38f55e9b6a
+(1 row)
+
+Time: 0.904 ms
+       md5_top_produtos_mv        
+----------------------------------
+ c3be7b22946444f4581c89bb859abe9e
+(1 row)
+
+Time: 15.326 ms
+      md5_vendas_por_dia_mv       
+----------------------------------
+ c7f95c8196c0ec6d651ff0722448873a
+(1 row)
+
+Time: 3.136 ms

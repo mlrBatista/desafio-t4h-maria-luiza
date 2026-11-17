@@ -1,0 +1,35 @@
+Aquecendo por 15s (não entra na medição)...
+ Container desafio-performance-carga-run-3bcffbf376e1 Creating 
+ Container desafio-performance-carga-run-3bcffbf376e1 Created 
+Medindo: 20 usuários virtuais por 60s...
+ Container desafio-performance-carga-run-37c2c26177fe Creating 
+ Container desafio-performance-carga-run-37c2c26177fe Created 
+Medição: diag-controle
+Carga: 20 usuários virtuais por 60s
+
+Requisições:        15280
+Requisições/s:      254.34
+Tempo de resposta:  mediana 82.3 ms | p95 164.0 ms | p99 196.4 ms
+Erros:              0.00%
+
+Por rota:
+rota                  req       mediana       p95           p99           erros   
+cliente               3836      72.1 ms       100.1 ms      168.7 ms      0.0%    
+cliente-por-email     2266      74.6 ms       101.9 ms      173.1 ms      0.0%    
+pedidos-do-cliente    3129      104.9 ms      186.5 ms      228.9 ms      0.0%    
+pedidos-por-status    2220      94.8 ms       170.6 ms      202.3 ms      0.0%    
+busca-produtos        2295      80.4 ms       110.4 ms      180.4 ms      0.0%    
+vendas-por-dia        1250      71.7 ms       100.0 ms      174.6 ms      0.0%    
+top-produtos          284       72.4 ms       99.9 ms       162.5 ms      0.0%    
+Conferindo o contrato depois da carga...
+
+Uso de recursos durante a carga:
+container                            amostras  cpu_media    cpu_max    mem_media      mem_max
+desafio-performance-banco-1                30      57.1%      73.5%    412.5 MiB    414.2 MiB
+desafio-performance-api-1                  30      49.6%      52.0%     27.9 MiB     29.1 MiB
+
+cpu_percentual: 100% = 1 CPU inteira.
+
+Contrato: Contrato mantido: as 42 respostas são iguais às gravadas.
+
+Resultado salvo em resultados/20261116-215513-diag-controle/
