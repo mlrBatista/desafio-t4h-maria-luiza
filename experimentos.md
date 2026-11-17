@@ -28,6 +28,7 @@ Registro de cada mudança aplicada na aplicação, com a hipótese, a fonte da i
 | 07 | Índice cobrindo + `SELECT` das 4 colunas em `/pedidos` | Aplicada e medida | 07-controle (controle A-B-A) | 51.34 → 81.60 | 1128.3 → 699.0 | banco 97.9% → 97.9%; API 18.7% → 25.2% | ~1,6x a vazão; os dois controles iguais (51.34 e 52.25), então o ganho é da mudança |
 | 08 | Tabela-resumo do total por status, mantida por trigger | Aplicada e medida | 08-controle (controle A-B-A) | 90.51 → 265.71 | 604.5 → 162.3 | banco 96.9% → 57.8%; API 24.4% → 50.3% | ~2,9x a vazão; o banco saiu do limite e o gargalo passou para a API |
 | 09 | Log de cada resposta sem o corpo da resposta | Aplicada, sem ganho | controles vizinhos 09-controle-depois-r2 e 09-controle-r3 | 259.45 → 261.31 e 280.90 → 256.56 | 164.2 → 161.8 e 153.0 → 157.8 | API ~49% em todas as séries (no limite) | vazão sem diferença mensurável (+0.7% e −8.7%, dentro da variação de ~8% entre controles); log ~10x menor |
+| 10 | API de 0.5 para 1.0 CPU | Aplicada e medida, revertida | 10-controle (controle A-B-A) | 246.53 → 473.73 | 169.6 → 87.4 | banco 63.3% → 101.3%; API 49.4% → 75.4% | ~1,8x a vazão com +33% de CPU no total; o banco virou o limite; a versão final volta a 0.5 CPU |
 
 ## 01 · Pool de conexões
 
@@ -307,6 +308,89 @@ Registro de cada mudança aplicada na aplicação, com a hipótese, a fonte da i
 - **Conclusão: aplicada, sem ganho de vazão.** Remover o corpo do log não mudou a vazão, a CPU ou a memória da API de forma mensurável. O que ela entregou de concreto foi um log cerca de 10 vezes menor, com o custo de não registrar mais o conteúdo das respostas. A mudança foi mantida, porque não piorou nenhuma métrica com diferença maior que o ruído e reduz o volume de log.
 - **Por que o ganho do perfil não apareceu:** o perfil mostrava o log com 8.2% a 12.7% do tempo ativo da API, mas a fatia de CPU de uma função não vira, automaticamente, ganho de vazão. Uma explicação possível, não verificada, é que a escrita no pipe já é assíncrona e não segurava as respostas; outra é que o ganho existe, mas é menor que a variação de ~8% entre séries, que é o limite do que este teste consegue detectar.
 - **Lição de método:** sem o controle repetido, esta mudança teria três conclusões erradas: na tentativa de 09/11, comparando só com o primeiro controle, ela pareceria ter piorado; na repetição, contra o primeiro controle, pareceria ter melhorado 47.7%; olhando só o último par, pareceria ter piorado 8.7%.
+
+## 10 · Limite de CPU da API de 0.5 para 1.0 (experimento de escala, revertido)
+
+- **Commit:** `baa518a` (mudança, [docker-compose.yml](docker-compose.yml)) · resultados em `3a1a4aa` (controle), `434faf2` (mudança) e `97292de` (controle depois) · revertida em `4c50db5`.
+- **O que mudou:** só o limite de CPU do serviço `api` no `docker-compose.yml`, de `cpus: "0.5"` para `cpus: "1.0"`. Código, banco e memória (256 MB) não mudaram. É a única mudança que aumenta recurso, então o ganho vem com o custo.
+- **Hipótese:** depois da 08 e da 09, a API era o gargalo (CPU média de ~49% para um limite de 50%, enquanto o banco ficava em ~57–63%), e todas as rotas levavam ~70–105 ms, sinal de fila na API. Com 1.0 CPU, a API deixaria de ser o limite e a vazão subiria até o banco voltar a ser o gargalo. Um processo Node usa ~1 CPU para o JavaScript, então 1.0 é o máximo útil sem cluster.
+- **Condições:** A-B-A no mesmo banco, em sessão contínua, aquecimento de 60 s antes de cada série, computador na tomada. O `contexto.txt` de cada execução registra o limite: `api: cpus=500000000` nos dois controles e `cpus=1000000000` na mudança.
+- **Antes (controle, 0.5 CPU):** [10-controle](resultados/20261110-203407-10-controle), [2](resultados/20261110-203527-10-controle), [3](resultados/20261110-203647-10-controle).
+- **Depois (1.0 CPU):** [10-api-1cpu](resultados/20261110-203927-10-api-1cpu), [2](resultados/20261110-204048-10-api-1cpu), [3](resultados/20261110-204208-10-api-1cpu).
+- **Controle depois (0.5 CPU):** [10-controle-depois](resultados/20261110-204444-10-controle-depois), [2](resultados/20261110-204604-10-controle-depois), [3](resultados/20261110-204724-10-controle-depois).
+
+| Métrica (mediana das 3) | Controle (0.5 CPU) | Mudança (1.0 CPU) | Controle depois (0.5 CPU) |
+|---|---|---|---|
+| Requisições/s | 246.53 (execuções: 246.53, 259.87, 244.54) | 473.73 (execuções: 473.73, 472.00, 510.51) | 273.22 (execuções: 273.22, 269.27, 275.01) |
+| Mediana geral | 82.9 ms | 35.1 ms | 79.3 ms |
+| p95 | 169.6 ms | 87.4 ms | 130.7 ms |
+| p99 | 202.9 ms | 113.8 ms | 191.5 ms |
+| CPU / memória do banco | 63.3% / 328.2 MiB | 101.3% / 423.6 MiB | 61.9% / 432.9 MiB |
+| CPU / memória da API | 49.4% / 28.9 MiB | 75.4% / 29.3 MiB | 49.5% / 29.0 MiB |
+| Pico de CPU da API (mediana dos máximos do `recursos.csv`) | 52.66% | 87.30% | 52.50% |
+| Pico de CPU do banco (mediana dos máximos do `recursos.csv`) | 76.51% | 104.82% | 79.64% |
+
+| Rota (mediana das medianas) | Controle | Mudança | Controle depois |
+|---|---|---|---|
+| cliente | 73.5 ms | 25.1 ms | 70.4 ms |
+| cliente-por-email | 73.5 ms | 25.6 ms | 70.7 ms |
+| pedidos-do-cliente | 104.6 ms | 59.7 ms | 100.4 ms |
+| pedidos-por-status | 95.2 ms | 50.8 ms | 91.5 ms |
+| busca-produtos | 81.3 ms | 37.4 ms | 78.3 ms |
+| vendas-por-dia | 74.7 ms | 26.0 ms | 71.7 ms |
+| top-produtos | 74.9 ms | 25.2 ms | 72.0 ms |
+
+- **Leitura:** +92.2% contra o controle antes e +73.4% contra o controle depois; os dois controles diferem 10.8% entre si, e as faixas não se sobrepõem (controles de 244.54 a 275.01, mudança de 472.00 a 510.51), então o ganho não é ruído. Todas as rotas ficaram ~2 a 3 vezes mais rápidas, o que confirma que o tempo das rotas simples era fila na API. Depois da mudança, **o banco virou o limite** (CPU média de 101.3%, pico de 104.82%), e a API ficou com folga (75.4% de 100%).
+- **Custo e ganho (contas sobre as medianas):** a CPU reservada no total foi de 1.5 (0.5 da API + 1.0 do banco) para 2.0, ou +33%. A vazão foi de 259.88 (média dos dois controles) para 473.73 req/s, ou +82%. Em requisições por CPU reservada no total, de ~173 para ~237. A vazão cresceu mais que o custo porque o banco tinha folga e estava esperando a API; com o banco agora no limite, mais CPU só na API não ajudaria mais.
+- **Por que foi revertida:** a pergunta do desafio é deixar a aplicação mais rápida e mais barata sem mudar o que ela faz. A versão final mantém os recursos originais (API com 0.5 CPU, banco com 1.0) e mostra o ganho que veio só de tirar desperdício. A 10 fica como experimento de escala: responde quanto custa crescer quando ~260 req/s não bastarem. A configuração com 0.5 CPU é a mesma dos dois controles, já medidos; depois do revert, o contrato foi conferido ("Contrato mantido").
+- **O que não foi testado:** mais CPU no banco, que passaria a ser o próximo passo de escala, e o cluster de processos Node, que só faz sentido com mais de 1 CPU na API (ver [proximos-testes.md](proximos-testes.md)).
+
+## Simulação de escritas: limites das mudanças 04, 06 e 08
+
+A carga do desafio só lê, então ela não mostra o que as views e o trigger custam quando os dados mudam. Este diagnóstico simulou escritas numa cópia do banco para medir esses custos. Não é uma mudança e não é medição oficial: os números estão em [diagnostico/simulacao-escritas/](diagnostico/simulacao-escritas/) (resumo em [07-resumo.txt](diagnostico/simulacao-escritas/07-resumo.txt)), não em `resultados/`, e não se comparam com as medições do `medir.sh`.
+
+- **Commit:** `5fc5225`, em 16/11/2026.
+- **Como foi feito:** cópia do banco (`CREATE DATABASE loja_teste TEMPLATE loja`) no mesmo container, com a mesma 1 CPU e 512 MB, e a API parada durante o teste. O `pgbench` (a ferramenta de carga do PostgreSQL) rodou num container separado, para não dividir a CPU do banco. Ao fim, a cópia foi apagada, e o banco `loja` foi comparado com o estado salvo antes: 121 linhas e 5 impressões digitais md5 iguais, os 4 triggers ligados, e o contrato mantido. A API voltou com 0.5 CPU e o mesmo código do repositório.
+- **Erros no caminho, corrigidos e registrados nos cabeçalhos dos arquivos:** a primeira tentativa usou `-d` no `pgbench`, que liga o modo de depuração (o banco é o argumento final do comando); a depuração distorcia a vazão (a leitura de referência foi de 632.479 para 947.549 tps sem ela), e os passos afetados foram refeitos. Um erro de tipo na consulta do estado dos triggers foi corrigido antes de qualquer execução.
+
+**1. As views ficam desatualizadas; o trigger não.** Lote fictício na cópia: 5000 pedidos `pago` em 2025-12-31, com 15000 itens, 1000 deles com 100 unidades do produto 91 (o 10º do ranking).
+
+| Item | Antes | Depois do lote, sem `REFRESH` | Depois do `REFRESH` |
+|---|---|---|---|
+| 1º do ranking (view / cálculo ao vivo) | 167 / 167 | 167 / 91 | 91 / 91 |
+| Receita do 1º (view / ao vivo) | 4882457440 / 4882457440 | 4882457440 / 13506833440 | 13506833440 / 13506833440 |
+| `vendas_por_dia_mv` em 2025-12-31 (view / ao vivo) | 619 pedidos, 915440530 / igual | 619 pedidos, 915440530 / 5619 pedidos, 17812070200 | 5619 pedidos, 17812070200 / igual |
+| `pedidos_por_status`, `pago` (resumo / `count(*)`) | 300000 / 300000 | 305000 / 305000 | 305000 / 305000 |
+
+**2. Custo do `REFRESH`** (3 execuções, cópia sem carga): `top_produtos_mv` com mediana de 3067.163 ms no normal e 3353.363 ms no `CONCURRENTLY`; `vendas_por_dia_mv` com 2385.805 ms e 2126.060 ms. O `CONCURRENTLY` exige um índice único: `vendas_por_dia_mv` já tem (em `dia`); para `top_produtos_mv`, o teste criou um índice único em `id` só na cópia, porque a aplicação não tem esse índice.
+
+**3. O `REFRESH` normal trava as leituras.** Com 5 clientes lendo as duas views sem parar por 20 s, e um `REFRESH` disparado no meio:
+
+| Caso | Vazão | Latência média | Latência máxima | Segundos com 0 leituras |
+|---|---|---|---|---|
+| Sem `REFRESH` | 947.5 tps | 5.178 ms | 130.265 ms | nenhum |
+| `REFRESH` normal | 773.3 tps | 6.371 ms | 4794.003 ms | 3 |
+| `REFRESH CONCURRENTLY` | 799.6 tps | 6.149 ms | 95.492 ms | nenhum (mínimo de 448.0 tps por segundo) |
+
+Com o `CONCURRENTLY`, as leituras não pararam, mas o próprio `REFRESH` ficou mais lento sob carga: 12196.170 ms para `vendas_por_dia_mv`, contra 2126.060 ms sem carga.
+
+**4. Os triggers sob escritas simultâneas.** Cada transação insere e apaga um pedido e confirma (`COMMIT`), deixando os totais como estavam. 8 combinações × 3 execuções de 30 s, em ordem alternada, 0 falhas. Vazão em transações por segundo (mediana):
+
+| Clientes | Status | Com triggers | Sem triggers | Sem ÷ com (conta) |
+|---|---|---|---|---|
+| 1 | só `pago` | 672.7 | 853.9 | 1.27x |
+| 1 | sorteado entre os 4 | 683.9 | 815.6 | 1.19x |
+| 10 | só `pago` | 629.4 | 739.5 | 1.18x |
+| 10 | sorteado entre os 4 | 636.3 | 758.0 | 1.19x |
+
+Com 10 clientes e triggers, "só `pago`" × "sorteado" deu 1.01x (sorteado ÷ fixo). No fim, a tabela-resumo bateu com o `count(*)` (`pago` 305000).
+
+- **Leitura:**
+  - **Views:** confirmado com dados que os relatórios ficam com o valor antigo até o `REFRESH`, que custa ~2 a 3 s por view sem carga. O `REFRESH` normal parou as leituras por até ~4,8 s; o `CONCURRENTLY` não parou, mas demorou mais sob carga e exige um índice único que `top_produtos_mv` não tem na aplicação.
+  - **Trigger:** manteve o total correto em todos os momentos e custou ~1.2x em vazão de escrita neste cenário. A variação entre execuções foi grande (por exemplo, de 593.2 a 861.1 tps no mesmo caso), então o custo real pode ser um pouco maior ou menor. A fila na linha da tabela-resumo, prevista para escritas simultâneas do mesmo status, não apareceu (1.01x).
+- **Comparação com o diagnóstico anterior e com a literatura:** no diagnóstico isolado da 08, 10 mil inserções numa única transação, sem confirmar a gravação, ficaram ~3,6x mais lentas com o trigger; aqui, com cada transação confirmada, o custo ficou em ~1,2x. Nelson (2016) relata inserções "fifty times slower" com um contador mantido por trigger. A diferença depende do cenário; uma explicação possível, não verificada, é que o custo de confirmar cada transação dilui o custo do trigger.
+- **Hipóteses não verificadas:** o `REFRESH` normal trava as leituras por um bloqueio exclusivo na view durante a reconstrução (o observado foi a espera, com a latência máxima próxima da soma dos dois `REFRESH`); a fila no placar pode não ter aparecido porque o gargalo estava na confirmação das transações, e não na linha da tabela-resumo.
+- **O que fica para o artigo:** os relatórios em materialized view trocam atualidade por desempenho, e atualizá-los exige escolher entre travar as leituras (`REFRESH` normal) ou um refresh mais lento com índice único (`CONCURRENTLY`); o contador por trigger fica sempre correto, a um custo de escrita que, neste cenário, foi de ~20%.
 
 ## Séries que não entram nas comparações
 
