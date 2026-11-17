@@ -1,0 +1,116 @@
+# RESUMO gerado por diagnostico/simulacao-escritas/gerar-resumo.js a partir das saídas brutas desta pasta. Nenhum número foi digitado.
+# Data e hora da geração: Mon Nov 16 2026 21:26:50 GMT-0300 (Brasilia Standard Time) | Commit (HEAD): 4c50db5
+# Cenário FICTÍCIO numa CÓPIA do banco (loja_teste, CREATE DATABASE ... TEMPLATE loja) dentro do MESMO container do banco (1 CPU e 512 MB). O banco da aplicação (loja) não foi alterado.
+# Lote inserido: 5000 pedidos 'pago' em 2025-12-31 (último dia com dados), 3 itens cada, 15000 itens no total; 1 em cada 5 pedidos tem um item de 100 unidades a R$ 1.000,00 no produto que era o 10º do ranking.
+#   Simula um dia de vendas muito acima do normal, com uma venda grande concentrada num produto, para mudar o ranking e a receita de forma visível.
+# Não é medição oficial: a régua (carga/, scripts/medir.sh) não mudou e estes números não vêm de resultados/. O autovacuum pode ter rodado na cópia (e rodou: ver o fim do passo 5).
+# O pgbench roda em um container separado (postgres:16.4, mesma rede), então o servidor não divide a CPU com o cliente.
+# Tentativas descartadas e refeitas (registradas nos cabeçalhos dos arquivos): erro de tipo no estado dos triggers (passo 5) e uso da opção -d do pgbench, que liga o modo de depuração (passos 4 e 5).
+
+== PASSO 1: cópia do banco ==
+CREATE DATABASE loja_teste TEMPLATE loja: 3194.836 ms
+  loja: 361 MB (378180067 bytes)
+  loja_teste: 361 MB (378020367 bytes)
+
+== PASSO 2: antes / depois da escrita sem REFRESH / depois do REFRESH ==
+Lote inserido (confirmado com COMMIT): 5000 | 15000 | 1000  [pedidos | itens | itens no produto em foco]
+Produto em foco (10º do ranking antes da escrita): 91
+  posição 10 antes: 91 | 10097 | 3506486160  [id | unidades | receita_centavos]
+
+top_produtos_mv (3 primeiros) x consulta original ao vivo:
+  [antes]
+    #1: view id 167 (10052 un, 4882457440) | ao vivo id 167 (10052 un, 4882457440) | bate: t
+    #2: view id 43 (10051 un, 4685374160) | ao vivo id 43 (10051 un, 4685374160) | bate: t
+    #3: view id 55 (10051 un, 4386658440) | ao vivo id 55 (10051 un, 4386658440) | bate: t
+  [sem refresh]
+    #1: view id 167 (10052 un, 4882457440) | ao vivo id 91 (110098 un, 13506833440) | bate: f
+    #2: view id 43 (10051 un, 4685374160) | ao vivo id 167 (10055 un, 4883914600) | bate: f
+    #3: view id 55 (10051 un, 4386658440) | ao vivo id 43 (10051 un, 4685374160) | bate: f
+  [depois do refresh]
+    #1: view id 91 (110098 un, 13506833440) | ao vivo id 91 (110098 un, 13506833440) | bate: t
+    #2: view id 167 (10055 un, 4883914600) | ao vivo id 167 (10055 un, 4883914600) | bate: t
+    #3: view id 43 (10051 un, 4685374160) | ao vivo id 43 (10051 un, 4685374160) | bate: t
+
+vendas_por_dia_mv do dia 2025-12-31 x consulta original ao vivo:
+  [antes] view: 619 pedidos, 3721 itens, 915440530 | ao vivo: 619 pedidos, 3721 itens, 915440530 | bate: t
+  [sem refresh] view: 619 pedidos, 3721 itens, 915440530 | ao vivo: 5619 pedidos, 131722 itens, 17812070200 | bate: f
+  [depois do refresh] view: 5619 pedidos, 131722 itens, 17812070200 | ao vivo: 5619 pedidos, 131722 itens, 17812070200 | bate: t
+
+pedidos_por_status (trigger) x count(*) por status:
+  [antes] cancelado: 50000 x 50000 (t) | entregue: 125000 x 125000 (t) | pago: 300000 x 300000 (t) | pendente: 25000 x 25000 (t)
+  [sem refresh] cancelado: 50000 x 50000 (t) | entregue: 125000 x 125000 (t) | pago: 305000 x 305000 (t) | pendente: 25000 x 25000 (t)
+  [depois do refresh] cancelado: 50000 x 50000 (t) | entregue: 125000 x 125000 (t) | pago: 305000 x 305000 (t) | pendente: 25000 x 25000 (t)
+
+REFRESH único (passo 2, D1 e D2): top_produtos_mv 3242.542 ms | vendas_por_dia_mv 3641.838 ms
+
+== PASSO 3: custo do REFRESH (3 execuções de cada caso; mediana) ==
+  REFRESH top_produtos_mv: 3166.424 | 3067.163 | 2906.938 ms | mediana 3067.163 ms
+  REFRESH vendas_por_dia_mv: 2385.805 | 2374.340 | 2550.437 ms | mediana 2385.805 ms
+  REFRESH CONCURRENTLY top_produtos_mv: 3353.363 | 3360.198 | 3284.762 ms | mediana 3353.363 ms
+  REFRESH CONCURRENTLY vendas_por_dia_mv: 2092.267 | 2126.060 | 2529.346 ms | mediana 2126.060 ms
+  (top_produtos_mv CONCURRENTLY usa um índice único criado SÓ na cópia; esse índice não existe no banco da aplicação.)
+
+== PASSO 4: o REFRESH trava as leituras? (pgbench -c 5 -T 20; REFRESH disparado ~8 s depois do início) ==
+  [sem-refresh] transações: 18953 | vazão: 947.5 tps | latência média: 5.178 ms | latência máxima: 130.265 ms | p99: 70.890 ms | segundos com 0.0 tps: nenhum | menor tps em 1 s: 687.1
+  [refresh-normal] transações: 15453 | vazão: 773.3 tps | latência média: 6.371 ms | latência máxima: 4794.003 ms | p99: 68.820 ms | segundos com 0.0 tps: 10, 12, 13 | menor tps em 1 s: 0.0
+      janela do REFRESH: 5.750 s | transações concluídas dentro dela (+1 s): 2135 | maior latência dessas: 4794.003 ms | transações com latência ≥ 1000 ms: 6
+      duração de cada REFRESH nesse cenário (vendas_por_dia_mv, top_produtos_mv): 1756.158 ms | 3039.218 ms
+  [refresh-concorrente] transações: 16028 | vazão: 799.6 tps | latência média: 6.149 ms | latência máxima: 95.492 ms | p99: 78.639 ms | segundos com 0.0 tps: nenhum | menor tps em 1 s: 448.0
+      janela do REFRESH: 16.097 s | transações concluídas dentro dela (+1 s): 8578 | maior latência dessas: 95.492 ms | transações com latência ≥ 1000 ms: 0
+      duração de cada REFRESH nesse cenário (vendas_por_dia_mv, top_produtos_mv): 12196.170 ms | 2629.977 ms
+
+== PASSO 5: triggers sob escritas simultâneas (pgbench -n -T 30; 3 execuções por combinação) ==
+  execuções lidas: 24 (esperado 24) | execuções com transações falhas: 0
+  combinação                                  tps (3 execuções)                  mediana tps | latência média ms (3)              mediana
+  trigger com,  1 cliente(s), status fixo     633.9 | 801.7 | 672.7                    672.7 | 1.578 | 1.247 | 1.486              1.486
+  trigger sem,  1 cliente(s), status fixo     853.9 | 861.1 | 593.2                    853.9 | 1.171 | 1.161 | 1.686              1.171
+  trigger com,  1 cliente(s), status sorteado 683.9 | 756.1 | 559.4                    683.9 | 1.462 | 1.323 | 1.788              1.462
+  trigger sem,  1 cliente(s), status sorteado 815.6 | 844.6 | 792.6                    815.6 | 1.226 | 1.184 | 1.262              1.226
+  trigger com, 10 cliente(s), status fixo     629.4 | 639.1 | 600.8                    629.4 | 15.889 | 15.647 | 16.644           15.889
+  trigger sem, 10 cliente(s), status fixo     797.0 | 725.3 | 739.5                    739.5 | 12.547 | 13.787 | 13.522           13.522
+  trigger com, 10 cliente(s), status sorteado 636.3 | 703.7 | 516.9                    636.3 | 15.716 | 14.211 | 19.346           15.716
+  trigger sem, 10 cliente(s), status sorteado 786.7 | 758.0 | 678.4                    758.0 | 12.712 | 13.192 | 14.741           13.192
+
+  Custo dos triggers (CONTA sobre as medianas: razão = tps sem trigger / tps com trigger; latência = com / sem):
+    1 cliente(s), status fixo: tps sem/com = 1.27x | latência média com/sem = 1.27x
+    1 cliente(s), status sorteado: tps sem/com = 1.19x | latência média com/sem = 1.19x
+    10 cliente(s), status fixo: tps sem/com = 1.18x | latência média com/sem = 1.18x
+    10 cliente(s), status sorteado: tps sem/com = 1.19x | latência média com/sem = 1.19x
+
+  Fila no placar (CONTA: razão das medianas de tps, status sorteado / status fixo 'pago'):
+    trigger com, 1 cliente(s): sorteado/fixo = 1.02x
+    trigger com, 10 cliente(s): sorteado/fixo = 1.01x
+    trigger sem, 1 cliente(s): sorteado/fixo = 0.96x
+    trigger sem, 10 cliente(s): sorteado/fixo = 1.02x
+
+  Conferência no fim do passo 5 (tabela-resumo x count(*), triggers e linhas mortas):
+    ##### FIM 2026-11-16 21:25:27 -0300 | triggers religados
+               tgname            | tgenabled 
+    -----------------------------+-----------
+     pedidos_por_status_delete   | O
+     pedidos_por_status_insert   | O
+     pedidos_por_status_truncate | O
+     pedidos_por_status_update   | O
+    (4 rows)
+      status   | resumo | contagem | bate 
+    -----------+--------+----------+------
+     cancelado |  50000 |    50000 | t
+     entregue  | 125000 |   125000 | t
+     pago      | 305000 |   305000 | t
+     pendente  |  25000 |    25000 | t
+    (4 rows)
+          relname       | n_live_tup | n_dead_tup |        last_autovacuum        | autovacuum_count 
+    --------------------+------------+------------+-------------------------------+------------------
+     pedidos            |     505000 |     126531 | 2026-11-17 00:21:43.59043+00  |                4
+     pedidos_por_status |          4 |        334 | 2026-11-17 00:23:39.765253+00 |               17
+    (2 rows)
+
+== PASSO 6: o banco loja ficou como estava? ==
+  00-estado-antes.txt x 00-estado-depois.txt (sem as linhas "Time:" e o cabeçalho): 121 linhas x 121 linhas | IDÊNTICOS
+  impressões digitais md5 (pedidos, itens_pedido, pedidos_por_status, top_produtos_mv, vendas_por_dia_mv): antes 37653c23 cacea8d4 ddd3e384 c3be7b22 c7f95c81 | depois 37653c23 cacea8d4 ddd3e384 c3be7b22 c7f95c81
+  triggers (O = ligado) antes: pedidos_por_status_delete | O; pedidos_por_status_insert | O; pedidos_por_status_truncate | O; pedidos_por_status_update | O
+  triggers (O = ligado) depois: pedidos_por_status_delete | O; pedidos_por_status_insert | O; pedidos_por_status_truncate | O; pedidos_por_status_update | O
+  # Limites: api NanoCpus=500000000 Memory=268435456;banco NanoCpus=1000000000 Memory=536870912;
+  # Limites: api NanoCpus=500000000 Memory=268435456;banco NanoCpus=1000000000 Memory=536870912;
+  # Hash de api/src/*.js: container 27cc7c2eb8249810 | HEAD 27cc7c2eb8249810 (mesma ordem de arquivos)
+  # Hash de api/src/*.js: container 27cc7c2eb8249810 | HEAD 27cc7c2eb8249810

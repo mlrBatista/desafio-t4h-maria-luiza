@@ -1,0 +1,112 @@
+# Passo 4: pgbench de leitura (5 clientes, 20 s, --progress=1, -l) em loja_teste (cópia no mesmo container do banco, 1 CPU e 512 MB). O pgbench roda em container separado (postgres:16.4, mesma rede).
+# Data e hora: 2026-11-16 21:10:39 -0300 | Commit: 4c50db5 | O autovacuum pode ter rodado na cópia. O REFRESH é disparado ~8 s depois do início do pgbench.
+# Observação: uma 1ª execução deste passo foi descartada e refeita, porque usei a opção -d do pgbench (que liga o modo de depuração, e não escolhe o banco). Esta versão usa o banco como argumento posicional e PGDATABASE=loja_teste.
+
+##### caso sem-refresh | início 2026-11-16 21:10:39 -0300
+pgbench (16.4 (Debian 16.4-1.pgdg120+2))
+progress: 1.0 s, 794.7 tps, lat 5.710 ms stddev 16.012, 0 failed
+progress: 2.0 s, 687.1 tps, lat 7.213 ms stddev 18.371, 0 failed
+progress: 3.0 s, 800.0 tps, lat 6.139 ms stddev 15.656, 0 failed
+progress: 4.0 s, 742.0 tps, lat 6.607 ms stddev 16.599, 0 failed
+progress: 5.0 s, 840.8 tps, lat 5.831 ms stddev 15.599, 0 failed
+progress: 6.0 s, 696.1 tps, lat 7.028 ms stddev 17.959, 0 failed
+progress: 7.0 s, 707.0 tps, lat 6.994 ms stddev 19.393, 0 failed
+progress: 8.0 s, 1118.8 tps, lat 4.412 ms stddev 13.663, 0 failed
+progress: 9.0 s, 1069.1 tps, lat 4.574 ms stddev 13.609, 0 failed
+progress: 10.0 s, 1170.9 tps, lat 4.191 ms stddev 12.853, 0 failed
+progress: 11.0 s, 1055.9 tps, lat 4.636 ms stddev 13.609, 0 failed
+progress: 12.0 s, 1125.2 tps, lat 4.354 ms stddev 13.212, 0 failed
+progress: 13.0 s, 896.9 tps, lat 5.477 ms stddev 16.070, 0 failed
+progress: 14.0 s, 1057.1 tps, lat 4.644 ms stddev 13.633, 0 failed
+progress: 15.0 s, 1160.0 tps, lat 4.216 ms stddev 13.049, 0 failed
+progress: 16.0 s, 1196.0 tps, lat 4.116 ms stddev 12.923, 0 failed
+progress: 17.0 s, 1080.9 tps, lat 4.515 ms stddev 13.120, 0 failed
+progress: 18.0 s, 918.0 tps, lat 5.283 ms stddev 15.245, 0 failed
+progress: 19.0 s, 868.1 tps, lat 5.716 ms stddev 16.259, 0 failed
+progress: 20.0 s, 962.9 tps, lat 5.083 ms stddev 14.210, 0 failed
+transaction type: /s/leitura.sql
+scaling factor: 1
+query mode: simple
+number of clients: 5
+number of threads: 1
+maximum number of tries: 1
+duration: 20 s
+number of transactions actually processed: 18953
+number of failed transactions: 0 (0.000%)
+latency average = 5.178 ms
+latency stddev = 14.901 ms
+initial connection time = 26.211 ms
+tps = 947.549323 (without initial connection time)
+##### fim do caso sem-refresh | 2026-11-16 21:11:00 -0300
+##### caso refresh-normal | início 2026-11-16 21:11:03 -0300
+pgbench (16.4 (Debian 16.4-1.pgdg120+2))
+progress: 1.0 s, 1135.7 tps, lat 3.966 ms stddev 12.603, 0 failed
+progress: 2.0 s, 936.0 tps, lat 5.225 ms stddev 14.751, 0 failed
+progress: 3.0 s, 968.0 tps, lat 5.063 ms stddev 14.399, 0 failed
+progress: 4.0 s, 1041.1 tps, lat 4.697 ms stddev 13.510, 0 failed
+progress: 5.0 s, 649.8 tps, lat 7.529 ms stddev 20.009, 0 failed
+progress: 6.0 s, 1040.8 tps, lat 4.743 ms stddev 14.224, 0 failed
+progress: 7.0 s, 1135.4 tps, lat 4.315 ms stddev 13.309, 0 failed
+progress: 8.0 s, 893.1 tps, lat 5.441 ms stddev 15.108, 0 failed
+progress: 9.0 s, 342.8 tps, lat 5.722 ms stddev 17.461, 0 failed
+progress: 10.0 s, 0.0 tps, lat 0.000 ms stddev 0.000, 0 failed
+progress: 11.0 s, 1.0 tps, lat 1756.562 ms stddev NaN, 0 failed
+progress: 12.0 s, 0.0 tps, lat 0.000 ms stddev 0.000, 0 failed
+progress: 13.0 s, 0.0 tps, lat 0.000 ms stddev 0.000, 0 failed
+progress: 14.0 s, 1113.2 tps, lat 23.589 ms stddev 300.908, 0 failed
+progress: 15.0 s, 1110.8 tps, lat 4.405 ms stddev 13.271, 0 failed
+progress: 16.0 s, 823.1 tps, lat 5.972 ms stddev 16.853, 0 failed
+progress: 17.0 s, 1166.9 tps, lat 4.203 ms stddev 12.792, 0 failed
+progress: 18.0 s, 955.9 tps, lat 5.120 ms stddev 14.251, 0 failed
+progress: 19.0 s, 1105.0 tps, lat 4.431 ms stddev 13.239, 0 failed
+progress: 20.0 s, 1030.1 tps, lat 4.762 ms stddev 13.753, 0 failed
+transaction type: /s/leitura.sql
+scaling factor: 1
+query mode: simple
+number of clients: 5
+number of threads: 1
+maximum number of tries: 1
+duration: 20 s
+number of transactions actually processed: 15453
+number of failed transactions: 0 (0.000%)
+latency average = 6.371 ms
+latency stddev = 83.249 ms
+initial connection time = 23.205 ms
+tps = 773.261843 (without initial connection time)
+##### fim do caso refresh-normal | 2026-11-16 21:11:24 -0300
+##### caso refresh-concorrente | início 2026-11-16 21:11:27 -0300
+pgbench (16.4 (Debian 16.4-1.pgdg120+2))
+progress: 1.0 s, 749.8 tps, lat 6.348 ms stddev 15.605, 0 failed
+progress: 2.0 s, 1130.4 tps, lat 4.334 ms stddev 13.317, 0 failed
+progress: 3.0 s, 810.9 tps, lat 6.069 ms stddev 17.092, 0 failed
+progress: 4.0 s, 876.7 tps, lat 5.560 ms stddev 14.603, 0 failed
+progress: 5.0 s, 1294.6 tps, lat 3.788 ms stddev 12.242, 0 failed
+progress: 6.0 s, 1109.8 tps, lat 4.408 ms stddev 13.283, 0 failed
+progress: 7.0 s, 1205.3 tps, lat 4.067 ms stddev 12.686, 0 failed
+progress: 8.0 s, 792.4 tps, lat 6.133 ms stddev 16.603, 0 failed
+progress: 9.0 s, 448.0 tps, lat 11.048 ms stddev 25.361, 0 failed
+progress: 10.0 s, 520.0 tps, lat 9.505 ms stddev 23.623, 0 failed
+progress: 11.0 s, 734.0 tps, lat 6.742 ms stddev 18.681, 0 failed
+progress: 12.0 s, 682.0 tps, lat 7.226 ms stddev 19.190, 0 failed
+progress: 13.0 s, 739.9 tps, lat 6.671 ms stddev 18.611, 0 failed
+progress: 14.0 s, 628.1 tps, lat 7.796 ms stddev 20.436, 0 failed
+progress: 15.0 s, 594.0 tps, lat 8.347 ms stddev 21.786, 0 failed
+progress: 16.0 s, 699.9 tps, lat 7.045 ms stddev 18.946, 0 failed
+progress: 17.0 s, 748.5 tps, lat 6.561 ms stddev 18.329, 0 failed
+progress: 18.0 s, 728.7 tps, lat 6.759 ms stddev 18.555, 0 failed
+progress: 19.0 s, 790.9 tps, lat 6.218 ms stddev 17.789, 0 failed
+progress: 20.0 s, 738.9 tps, lat 6.609 ms stddev 18.511, 0 failed
+transaction type: /s/leitura.sql
+scaling factor: 1
+query mode: simple
+number of clients: 5
+number of threads: 1
+maximum number of tries: 1
+duration: 20 s
+number of transactions actually processed: 16028
+number of failed transactions: 0 (0.000%)
+latency average = 6.149 ms
+latency stddev = 17.352 ms
+initial connection time = 27.841 ms
+tps = 799.619886 (without initial connection time)
+##### fim do caso refresh-concorrente | 2026-11-16 21:11:52 -0300

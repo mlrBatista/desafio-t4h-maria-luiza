@@ -1,0 +1,53 @@
+# Passo 3: custo do REFRESH em loja_teste (cópia no mesmo container, 1 CPU e 512 MB). Script: diagnostico/simulacao-escritas/03-custo-refresh.sql, psql -f.
+# Data e hora: 2026-11-16 20:58:50 -0300 | Commit: 4c50db5 | O autovacuum pode ter rodado na cópia. O índice único em top_produtos_mv (id) existe SÓ na cópia, não no banco da aplicação.
+
+Timing is on.
+DO
+Time: 3.339 ms
+##### indice unico criado so na copia
+CREATE INDEX
+Time: 20.658 ms
+##### rodada 1 | normal | top_produtos_mv
+REFRESH MATERIALIZED VIEW
+Time: 3166.424 ms (00:03.166)
+##### rodada 1 | normal | vendas_por_dia_mv
+REFRESH MATERIALIZED VIEW
+Time: 2385.805 ms (00:02.386)
+##### rodada 1 | concorrente | top_produtos_mv
+REFRESH MATERIALIZED VIEW
+Time: 3353.363 ms (00:03.353)
+##### rodada 1 | concorrente | vendas_por_dia_mv
+REFRESH MATERIALIZED VIEW
+Time: 2092.267 ms (00:02.092)
+##### rodada 2 | normal | top_produtos_mv
+REFRESH MATERIALIZED VIEW
+Time: 3067.163 ms (00:03.067)
+##### rodada 2 | normal | vendas_por_dia_mv
+REFRESH MATERIALIZED VIEW
+Time: 2374.340 ms (00:02.374)
+##### rodada 2 | concorrente | top_produtos_mv
+REFRESH MATERIALIZED VIEW
+Time: 3360.198 ms (00:03.360)
+##### rodada 2 | concorrente | vendas_por_dia_mv
+REFRESH MATERIALIZED VIEW
+Time: 2126.060 ms (00:02.126)
+##### rodada 3 | normal | top_produtos_mv
+REFRESH MATERIALIZED VIEW
+Time: 2906.938 ms (00:02.907)
+##### rodada 3 | normal | vendas_por_dia_mv
+REFRESH MATERIALIZED VIEW
+Time: 2550.437 ms (00:02.550)
+##### rodada 3 | concorrente | top_produtos_mv
+REFRESH MATERIALIZED VIEW
+Time: 3284.762 ms (00:03.285)
+##### rodada 3 | concorrente | vendas_por_dia_mv
+REFRESH MATERIALIZED VIEW
+Time: 2529.346 ms (00:02.529)
+##### tamanho das views e indices na copia
+      relname      | tamanho_total 
+-------------------+---------------
+ top_produtos_mv   | 3136 kB
+ vendas_por_dia_mv | 112 kB
+(2 rows)
+
+Time: 3.259 ms

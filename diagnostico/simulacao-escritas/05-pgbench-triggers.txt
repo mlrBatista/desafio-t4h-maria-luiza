@@ -1,0 +1,382 @@
+# Passo 5: triggers de pedidos_por_status sob escritas simultâneas em loja_teste (cópia no mesmo container do banco, 1 CPU e 512 MB). Script: diagnostico/simulacao-escritas/05-triggers.sh.
+# pgbench em container separado (postgres:16.4, mesma rede), -n -T 30; 8 combinações x 3 rodadas, com a ordem alternada a cada rodada.
+# Início: 2026-11-16 21:12:02 -0300 | Commit: 4c50db5 | O autovacuum pode ter rodado na cópia (inserts e deletes geram linhas mortas em pedidos).
+# Observação: duas tentativas anteriores foram descartadas: (1) erro de tipo na consulta de estado dos triggers (tgenabled::text), antes de qualquer execução; (2) uso da opção -d do pgbench, que liga o modo de depuração (não escolhe o banco) e distorcia a vazão. Esta versão usa o banco como argumento posicional e PGDATABASE=loja_teste.
+
+##### INÍCIO 2026-11-16 21:12:02 -0300
+banco: loja_teste
+  status   | total  
+-----------+--------
+ cancelado |  50000
+ entregue  | 125000
+ pago      | 305000
+ pendente  |  25000
+(4 rows)
+
+           tgname            | tgenabled 
+-----------------------------+-----------
+ pedidos_por_status_delete   | O
+ pedidos_por_status_insert   | O
+ pedidos_por_status_truncate | O
+ pedidos_por_status_update   | O
+(4 rows)
+
+##### rodada 1 | trigger=com | clientes=1 | status=fixo | início 2026-11-16 21:12:03 -0300 | estado dos triggers: pedidos_por_status_delete=O,pedidos_por_status_insert=O
+pgbench (16.4 (Debian 16.4-1.pgdg120+2))
+transaction type: /s/escrita-fixo.sql
+scaling factor: 1
+query mode: simple
+number of clients: 1
+number of threads: 1
+maximum number of tries: 1
+duration: 30 s
+number of transactions actually processed: 19014
+number of failed transactions: 0 (0.000%)
+latency average = 1.578 ms
+initial connection time = 3.847 ms
+tps = 633.878094 (without initial connection time)
+##### rodada 1 | trigger=sem | clientes=1 | status=fixo | início 2026-11-16 21:12:37 -0300 | estado dos triggers: pedidos_por_status_delete=D,pedidos_por_status_insert=D
+pgbench (16.4 (Debian 16.4-1.pgdg120+2))
+transaction type: /s/escrita-fixo.sql
+scaling factor: 1
+query mode: simple
+number of clients: 1
+number of threads: 1
+maximum number of tries: 1
+duration: 30 s
+number of transactions actually processed: 25613
+number of failed transactions: 0 (0.000%)
+latency average = 1.171 ms
+initial connection time = 4.691 ms
+tps = 853.885955 (without initial connection time)
+##### rodada 1 | trigger=com | clientes=1 | status=sorteado | início 2026-11-16 21:13:10 -0300 | estado dos triggers: pedidos_por_status_delete=O,pedidos_por_status_insert=O
+pgbench (16.4 (Debian 16.4-1.pgdg120+2))
+transaction type: /s/escrita-sorteado.sql
+scaling factor: 1
+query mode: simple
+number of clients: 1
+number of threads: 1
+maximum number of tries: 1
+duration: 30 s
+number of transactions actually processed: 20517
+number of failed transactions: 0 (0.000%)
+latency average = 1.462 ms
+initial connection time = 4.947 ms
+tps = 683.902827 (without initial connection time)
+##### rodada 1 | trigger=sem | clientes=1 | status=sorteado | início 2026-11-16 21:13:44 -0300 | estado dos triggers: pedidos_por_status_delete=D,pedidos_por_status_insert=D
+pgbench (16.4 (Debian 16.4-1.pgdg120+2))
+transaction type: /s/escrita-sorteado.sql
+scaling factor: 1
+query mode: simple
+number of clients: 1
+number of threads: 1
+maximum number of tries: 1
+duration: 30 s
+number of transactions actually processed: 24464
+number of failed transactions: 0 (0.000%)
+latency average = 1.226 ms
+initial connection time = 4.773 ms
+tps = 815.567688 (without initial connection time)
+##### rodada 1 | trigger=com | clientes=10 | status=fixo | início 2026-11-16 21:14:18 -0300 | estado dos triggers: pedidos_por_status_delete=O,pedidos_por_status_insert=O
+pgbench (16.4 (Debian 16.4-1.pgdg120+2))
+transaction type: /s/escrita-fixo.sql
+scaling factor: 1
+query mode: simple
+number of clients: 10
+number of threads: 2
+maximum number of tries: 1
+duration: 30 s
+number of transactions actually processed: 18873
+number of failed transactions: 0 (0.000%)
+latency average = 15.889 ms
+initial connection time = 36.694 ms
+tps = 629.375813 (without initial connection time)
+##### rodada 1 | trigger=sem | clientes=10 | status=fixo | início 2026-11-16 21:14:51 -0300 | estado dos triggers: pedidos_por_status_delete=D,pedidos_por_status_insert=D
+pgbench (16.4 (Debian 16.4-1.pgdg120+2))
+transaction type: /s/escrita-fixo.sql
+scaling factor: 1
+query mode: simple
+number of clients: 10
+number of threads: 2
+maximum number of tries: 1
+duration: 30 s
+number of transactions actually processed: 23903
+number of failed transactions: 0 (0.000%)
+latency average = 12.547 ms
+initial connection time = 16.773 ms
+tps = 797.022777 (without initial connection time)
+##### rodada 1 | trigger=com | clientes=10 | status=sorteado | início 2026-11-16 21:15:25 -0300 | estado dos triggers: pedidos_por_status_delete=O,pedidos_por_status_insert=O
+pgbench (16.4 (Debian 16.4-1.pgdg120+2))
+transaction type: /s/escrita-sorteado.sql
+scaling factor: 1
+query mode: simple
+number of clients: 10
+number of threads: 2
+maximum number of tries: 1
+duration: 30 s
+number of transactions actually processed: 19107
+number of failed transactions: 0 (0.000%)
+latency average = 15.716 ms
+initial connection time = 24.253 ms
+tps = 636.307576 (without initial connection time)
+##### rodada 1 | trigger=sem | clientes=10 | status=sorteado | início 2026-11-16 21:15:58 -0300 | estado dos triggers: pedidos_por_status_delete=D,pedidos_por_status_insert=D
+pgbench (16.4 (Debian 16.4-1.pgdg120+2))
+transaction type: /s/escrita-sorteado.sql
+scaling factor: 1
+query mode: simple
+number of clients: 10
+number of threads: 2
+maximum number of tries: 1
+duration: 30 s
+number of transactions actually processed: 23616
+number of failed transactions: 0 (0.000%)
+latency average = 12.712 ms
+initial connection time = 18.294 ms
+tps = 786.656054 (without initial connection time)
+##### rodada 2 | trigger=sem | clientes=10 | status=sorteado | início 2026-11-16 21:16:32 -0300 | estado dos triggers: pedidos_por_status_delete=D,pedidos_por_status_insert=D
+pgbench (16.4 (Debian 16.4-1.pgdg120+2))
+transaction type: /s/escrita-sorteado.sql
+scaling factor: 1
+query mode: simple
+number of clients: 10
+number of threads: 2
+maximum number of tries: 1
+duration: 30 s
+number of transactions actually processed: 22759
+number of failed transactions: 0 (0.000%)
+latency average = 13.192 ms
+initial connection time = 18.178 ms
+tps = 758.008532 (without initial connection time)
+##### rodada 2 | trigger=com | clientes=10 | status=sorteado | início 2026-11-16 21:17:05 -0300 | estado dos triggers: pedidos_por_status_delete=O,pedidos_por_status_insert=O
+pgbench (16.4 (Debian 16.4-1.pgdg120+2))
+transaction type: /s/escrita-sorteado.sql
+scaling factor: 1
+query mode: simple
+number of clients: 10
+number of threads: 2
+maximum number of tries: 1
+duration: 30 s
+number of transactions actually processed: 21134
+number of failed transactions: 0 (0.000%)
+latency average = 14.211 ms
+initial connection time = 18.211 ms
+tps = 703.669620 (without initial connection time)
+##### rodada 2 | trigger=sem | clientes=10 | status=fixo | início 2026-11-16 21:17:38 -0300 | estado dos triggers: pedidos_por_status_delete=D,pedidos_por_status_insert=D
+pgbench (16.4 (Debian 16.4-1.pgdg120+2))
+transaction type: /s/escrita-fixo.sql
+scaling factor: 1
+query mode: simple
+number of clients: 10
+number of threads: 2
+maximum number of tries: 1
+duration: 30 s
+number of transactions actually processed: 21750
+number of failed transactions: 0 (0.000%)
+latency average = 13.787 ms
+initial connection time = 17.425 ms
+tps = 725.298291 (without initial connection time)
+##### rodada 2 | trigger=com | clientes=10 | status=fixo | início 2026-11-16 21:18:12 -0300 | estado dos triggers: pedidos_por_status_delete=O,pedidos_por_status_insert=O
+pgbench (16.4 (Debian 16.4-1.pgdg120+2))
+transaction type: /s/escrita-fixo.sql
+scaling factor: 1
+query mode: simple
+number of clients: 10
+number of threads: 2
+maximum number of tries: 1
+duration: 30 s
+number of transactions actually processed: 19171
+number of failed transactions: 0 (0.000%)
+latency average = 15.647 ms
+initial connection time = 16.695 ms
+tps = 639.110027 (without initial connection time)
+##### rodada 2 | trigger=sem | clientes=1 | status=sorteado | início 2026-11-16 21:18:45 -0300 | estado dos triggers: pedidos_por_status_delete=D,pedidos_por_status_insert=D
+pgbench (16.4 (Debian 16.4-1.pgdg120+2))
+transaction type: /s/escrita-sorteado.sql
+scaling factor: 1
+query mode: simple
+number of clients: 1
+number of threads: 1
+maximum number of tries: 1
+duration: 30 s
+number of transactions actually processed: 25335
+number of failed transactions: 0 (0.000%)
+latency average = 1.184 ms
+initial connection time = 3.796 ms
+tps = 844.581080 (without initial connection time)
+##### rodada 2 | trigger=com | clientes=1 | status=sorteado | início 2026-11-16 21:19:18 -0300 | estado dos triggers: pedidos_por_status_delete=O,pedidos_por_status_insert=O
+pgbench (16.4 (Debian 16.4-1.pgdg120+2))
+transaction type: /s/escrita-sorteado.sql
+scaling factor: 1
+query mode: simple
+number of clients: 1
+number of threads: 1
+maximum number of tries: 1
+duration: 30 s
+number of transactions actually processed: 22682
+number of failed transactions: 0 (0.000%)
+latency average = 1.323 ms
+initial connection time = 3.204 ms
+tps = 756.106539 (without initial connection time)
+##### rodada 2 | trigger=sem | clientes=1 | status=fixo | início 2026-11-16 21:19:52 -0300 | estado dos triggers: pedidos_por_status_delete=D,pedidos_por_status_insert=D
+pgbench (16.4 (Debian 16.4-1.pgdg120+2))
+transaction type: /s/escrita-fixo.sql
+scaling factor: 1
+query mode: simple
+number of clients: 1
+number of threads: 1
+maximum number of tries: 1
+duration: 30 s
+number of transactions actually processed: 25831
+number of failed transactions: 0 (0.000%)
+latency average = 1.161 ms
+initial connection time = 3.780 ms
+tps = 861.087668 (without initial connection time)
+##### rodada 2 | trigger=com | clientes=1 | status=fixo | início 2026-11-16 21:20:25 -0300 | estado dos triggers: pedidos_por_status_delete=O,pedidos_por_status_insert=O
+pgbench (16.4 (Debian 16.4-1.pgdg120+2))
+transaction type: /s/escrita-fixo.sql
+scaling factor: 1
+query mode: simple
+number of clients: 1
+number of threads: 1
+maximum number of tries: 1
+duration: 30 s
+number of transactions actually processed: 24048
+number of failed transactions: 0 (0.000%)
+latency average = 1.247 ms
+initial connection time = 4.520 ms
+tps = 801.695028 (without initial connection time)
+##### rodada 3 | trigger=sem | clientes=1 | status=sorteado | início 2026-11-16 21:20:59 -0300 | estado dos triggers: pedidos_por_status_delete=D,pedidos_por_status_insert=D
+pgbench (16.4 (Debian 16.4-1.pgdg120+2))
+transaction type: /s/escrita-sorteado.sql
+scaling factor: 1
+query mode: simple
+number of clients: 1
+number of threads: 1
+maximum number of tries: 1
+duration: 30 s
+number of transactions actually processed: 23777
+number of failed transactions: 0 (0.000%)
+latency average = 1.262 ms
+initial connection time = 4.004 ms
+tps = 792.646486 (without initial connection time)
+##### rodada 3 | trigger=com | clientes=10 | status=fixo | início 2026-11-16 21:21:32 -0300 | estado dos triggers: pedidos_por_status_delete=O,pedidos_por_status_insert=O
+pgbench (16.4 (Debian 16.4-1.pgdg120+2))
+transaction type: /s/escrita-fixo.sql
+scaling factor: 1
+query mode: simple
+number of clients: 10
+number of threads: 2
+maximum number of tries: 1
+duration: 30 s
+number of transactions actually processed: 18015
+number of failed transactions: 0 (0.000%)
+latency average = 16.644 ms
+initial connection time = 33.168 ms
+tps = 600.829074 (without initial connection time)
+##### rodada 3 | trigger=sem | clientes=10 | status=fixo | início 2026-11-16 21:22:05 -0300 | estado dos triggers: pedidos_por_status_delete=D,pedidos_por_status_insert=D
+pgbench (16.4 (Debian 16.4-1.pgdg120+2))
+transaction type: /s/escrita-fixo.sql
+scaling factor: 1
+query mode: simple
+number of clients: 10
+number of threads: 2
+maximum number of tries: 1
+duration: 30 s
+number of transactions actually processed: 22175
+number of failed transactions: 0 (0.000%)
+latency average = 13.522 ms
+initial connection time = 23.608 ms
+tps = 739.526619 (without initial connection time)
+##### rodada 3 | trigger=com | clientes=10 | status=sorteado | início 2026-11-16 21:22:40 -0300 | estado dos triggers: pedidos_por_status_delete=O,pedidos_por_status_insert=O
+pgbench (16.4 (Debian 16.4-1.pgdg120+2))
+transaction type: /s/escrita-sorteado.sql
+scaling factor: 1
+query mode: simple
+number of clients: 10
+number of threads: 2
+maximum number of tries: 1
+duration: 30 s
+number of transactions actually processed: 15567
+number of failed transactions: 0 (0.000%)
+latency average = 19.346 ms
+initial connection time = 21.159 ms
+tps = 516.895119 (without initial connection time)
+##### rodada 3 | trigger=sem | clientes=10 | status=sorteado | início 2026-11-16 21:23:13 -0300 | estado dos triggers: pedidos_por_status_delete=D,pedidos_por_status_insert=D
+pgbench (16.4 (Debian 16.4-1.pgdg120+2))
+transaction type: /s/escrita-sorteado.sql
+scaling factor: 1
+query mode: simple
+number of clients: 10
+number of threads: 2
+maximum number of tries: 1
+duration: 30 s
+number of transactions actually processed: 20370
+number of failed transactions: 0 (0.000%)
+latency average = 14.741 ms
+initial connection time = 20.839 ms
+tps = 678.399119 (without initial connection time)
+##### rodada 3 | trigger=com | clientes=1 | status=fixo | início 2026-11-16 21:23:47 -0300 | estado dos triggers: pedidos_por_status_delete=O,pedidos_por_status_insert=O
+pgbench (16.4 (Debian 16.4-1.pgdg120+2))
+transaction type: /s/escrita-fixo.sql
+scaling factor: 1
+query mode: simple
+number of clients: 1
+number of threads: 1
+maximum number of tries: 1
+duration: 30 s
+number of transactions actually processed: 20179
+number of failed transactions: 0 (0.000%)
+latency average = 1.486 ms
+initial connection time = 5.024 ms
+tps = 672.742968 (without initial connection time)
+##### rodada 3 | trigger=sem | clientes=1 | status=fixo | início 2026-11-16 21:24:20 -0300 | estado dos triggers: pedidos_por_status_delete=D,pedidos_por_status_insert=D
+pgbench (16.4 (Debian 16.4-1.pgdg120+2))
+transaction type: /s/escrita-fixo.sql
+scaling factor: 1
+query mode: simple
+number of clients: 1
+number of threads: 1
+maximum number of tries: 1
+duration: 30 s
+number of transactions actually processed: 17793
+number of failed transactions: 0 (0.000%)
+latency average = 1.686 ms
+initial connection time = 4.210 ms
+tps = 593.171556 (without initial connection time)
+##### rodada 3 | trigger=com | clientes=1 | status=sorteado | início 2026-11-16 21:24:54 -0300 | estado dos triggers: pedidos_por_status_delete=O,pedidos_por_status_insert=O
+pgbench (16.4 (Debian 16.4-1.pgdg120+2))
+transaction type: /s/escrita-sorteado.sql
+scaling factor: 1
+query mode: simple
+number of clients: 1
+number of threads: 1
+maximum number of tries: 1
+duration: 30 s
+number of transactions actually processed: 16780
+number of failed transactions: 0 (0.000%)
+latency average = 1.788 ms
+initial connection time = 5.653 ms
+tps = 559.412043 (without initial connection time)
+##### FIM 2026-11-16 21:25:27 -0300 | triggers religados
+           tgname            | tgenabled 
+-----------------------------+-----------
+ pedidos_por_status_delete   | O
+ pedidos_por_status_insert   | O
+ pedidos_por_status_truncate | O
+ pedidos_por_status_update   | O
+(4 rows)
+
+  status   | resumo | contagem | bate 
+-----------+--------+----------+------
+ cancelado |  50000 |    50000 | t
+ entregue  | 125000 |   125000 | t
+ pago      | 305000 |   305000 | t
+ pendente  |  25000 |    25000 | t
+(4 rows)
+
+      relname       | n_live_tup | n_dead_tup |        last_autovacuum        | autovacuum_count 
+--------------------+------------+------------+-------------------------------+------------------
+ pedidos            |     505000 |     126531 | 2026-11-17 00:21:43.59043+00  |                4
+ pedidos_por_status |          4 |        334 | 2026-11-17 00:23:39.765253+00 |               17
+(2 rows)
+

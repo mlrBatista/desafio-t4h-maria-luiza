@@ -1,0 +1,29 @@
+# Cópia do banco (passo 1). Script: diagnostico/simulacao-escritas/01-copia.sql, psql -f (conectado ao banco postgres), API parada.
+# Data e hora: 2026-11-16 20:57:41 -0300 | Mesmo container do banco (1 CPU e 512 MB).
+
+Timing is on.
+##### tamanho do banco loja antes da copia
+ bytes_loja | tamanho_loja 
+------------+--------------
+  378180067 | 361 MB
+(1 row)
+
+Time: 17.638 ms
+##### conexoes abertas em loja (esperado 0 para o TEMPLATE funcionar)
+ conexoes_em_loja 
+------------------
+                0
+(1 row)
+
+Time: 43.306 ms
+##### CREATE DATABASE loja_teste TEMPLATE loja
+CREATE DATABASE
+Time: 3194.836 ms (00:03.195)
+##### tamanho depois da copia
+  datname   |   bytes   | tamanho 
+------------+-----------+---------
+ loja       | 378180067 | 361 MB
+ loja_teste | 378020367 | 361 MB
+(2 rows)
+
+Time: 10.692 ms

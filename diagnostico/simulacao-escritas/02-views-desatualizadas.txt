@@ -1,0 +1,127 @@
+# Passo 2: views desatualizadas e trigger em dia, em loja_teste (cópia do banco no mesmo container, 1 CPU e 512 MB). Script: diagnostico/simulacao-escritas/02-views-desatualizadas.sql (gerado por gerar-02.js), psql -f.
+# Data e hora: 2026-11-16 20:58:18 -0300 | Commit: 4c50db5 | O autovacuum pode ter rodado na cópia durante o diagnóstico.
+
+Timing is on.
+DO
+Time: 13.047 ms
+ current_database 
+------------------
+ loja_teste
+(1 row)
+
+Time: 0.435 ms
+ ultimo_dia_com_dados 
+----------------------
+ 2025-12-31
+(1 row)
+
+Time: 4.840 ms
+##### A. ANTES da escrita: top 3 de top_produtos_mv x calculado ao vivo (consulta original da rota)
+ pos | id_view | un_view |  rec_view  | id_vivo | un_vivo |  rec_vivo  | bate 
+-----+---------+---------+------------+---------+---------+------------+------
+   1 |     167 |   10052 | 4882457440 |     167 |   10052 | 4882457440 | t
+   2 |      43 |   10051 | 4685374160 |      43 |   10051 | 4685374160 | t
+   3 |      55 |   10051 | 4386658440 |      55 |   10051 | 4386658440 | t
+(3 rows)
+
+Time: 4347.507 ms (00:04.348)
+##### A. ANTES da escrita: vendas_por_dia_mv do dia 2025-12-31 x calculado ao vivo
+    dia     | ped_view | ped_vivo | itens_view | itens_vivo | rec_view  | rec_vivo  | bate 
+------------+----------+----------+------------+------------+-----------+-----------+------
+ 2025-12-31 |      619 |      619 |       3721 |       3721 | 915440530 | 915440530 | t
+(1 row)
+
+Time: 339.394 ms
+##### A. ANTES da escrita: pedidos_por_status x count(*) por status
+  status   | resumo | contagem | bate 
+-----------+--------+----------+------
+ cancelado |  50000 |    50000 | t
+ entregue  | 125000 |   125000 | t
+ pago      | 300000 |   300000 | t
+ pendente  |  25000 |    25000 | t
+(4 rows)
+
+Time: 68.368 ms
+##### B. escrita: INSERT do lote e COMMIT (os triggers de pedidos_por_status disparam)
+Time: 0.504 ms
+ posicao10_id | unidades | receita_centavos 
+--------------+----------+------------------
+           91 |    10097 |       3506486160
+(1 row)
+
+Time: 5.334 ms
+Time: 0.534 ms
+Time: 1.775 ms
+BEGIN
+Time: 0.319 ms
+INSERT 0 5000
+Time: 1165.424 ms (00:01.165)
+INSERT 0 15000
+Time: 353.523 ms
+COMMIT
+Time: 4.676 ms
+ pedidos_inseridos | itens_inseridos | itens_no_produto_foco 
+-------------------+-----------------+-----------------------
+              5000 |           15000 |                  1000
+(1 row)
+
+Time: 14.036 ms
+##### C. DEPOIS da escrita, SEM REFRESH: top 3 de top_produtos_mv x calculado ao vivo (consulta original da rota)
+ pos | id_view | un_view |  rec_view  | id_vivo | un_vivo |  rec_vivo   | bate 
+-----+---------+---------+------------+---------+---------+-------------+------
+   1 |     167 |   10052 | 4882457440 |      91 |  110098 | 13506833440 | f
+   2 |      43 |   10051 | 4685374160 |     167 |   10055 |  4883914600 | f
+   3 |      55 |   10051 | 4386658440 |      43 |   10051 |  4685374160 | f
+(3 rows)
+
+Time: 3948.679 ms (00:03.949)
+##### C. DEPOIS da escrita, SEM REFRESH: vendas_por_dia_mv do dia 2025-12-31 x calculado ao vivo
+    dia     | ped_view | ped_vivo | itens_view | itens_vivo | rec_view  |  rec_vivo   | bate 
+------------+----------+----------+------------+------------+-----------+-------------+------
+ 2025-12-31 |      619 |     5619 |       3721 |     131722 | 915440530 | 17812070200 | f
+(1 row)
+
+Time: 109.109 ms
+##### C. DEPOIS da escrita, SEM REFRESH: pedidos_por_status x count(*) por status
+  status   | resumo | contagem | bate 
+-----------+--------+----------+------
+ cancelado |  50000 |    50000 | t
+ entregue  | 125000 |   125000 | t
+ pago      | 305000 |   305000 | t
+ pendente  |  25000 |    25000 | t
+(4 rows)
+
+Time: 273.446 ms
+##### D. REFRESH MATERIALIZED VIEW das duas views (cada tempo aparece na linha Time: logo abaixo)
+##### D1. REFRESH MATERIALIZED VIEW top_produtos_mv
+REFRESH MATERIALIZED VIEW
+Time: 3242.542 ms (00:03.243)
+##### D2. REFRESH MATERIALIZED VIEW vendas_por_dia_mv
+REFRESH MATERIALIZED VIEW
+Time: 3641.838 ms (00:03.642)
+##### D. DEPOIS do REFRESH: top 3 de top_produtos_mv x calculado ao vivo (consulta original da rota)
+ pos | id_view | un_view |  rec_view   | id_vivo | un_vivo |  rec_vivo   | bate 
+-----+---------+---------+-------------+---------+---------+-------------+------
+   1 |      91 |  110098 | 13506833440 |      91 |  110098 | 13506833440 | t
+   2 |     167 |   10055 |  4883914600 |     167 |   10055 |  4883914600 | t
+   3 |      43 |   10051 |  4685374160 |      43 |   10051 |  4685374160 | t
+(3 rows)
+
+Time: 2852.613 ms (00:02.853)
+##### D. DEPOIS do REFRESH: vendas_por_dia_mv do dia 2025-12-31 x calculado ao vivo
+    dia     | ped_view | ped_vivo | itens_view | itens_vivo |  rec_view   |  rec_vivo   | bate 
+------------+----------+----------+------------+------------+-------------+-------------+------
+ 2025-12-31 |     5619 |     5619 |     131722 |     131722 | 17812070200 | 17812070200 | t
+(1 row)
+
+Time: 79.582 ms
+##### D. DEPOIS do REFRESH: pedidos_por_status x count(*) por status
+  status   | resumo | contagem | bate 
+-----------+--------+----------+------
+ cancelado |  50000 |    50000 | t
+ entregue  | 125000 |   125000 | t
+ pago      | 305000 |   305000 | t
+ pendente  |  25000 |    25000 | t
+(4 rows)
+
+Time: 389.488 ms

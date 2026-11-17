@@ -1,0 +1,21 @@
+# Passo 6: DROP DATABASE loja_teste. Script: diagnostico/simulacao-escritas/06-restaurar.sql, psql -f (conectado ao banco postgres).
+# Data e hora: 2026-11-16 21:25:48 -0300
+
+Timing is on.
+##### sessoes abertas em loja_teste (esperado 0)
+ sessoes_em_loja_teste 
+-----------------------
+                     0
+(1 row)
+
+Time: 21.285 ms
+##### DROP DATABASE loja_teste
+DROP DATABASE
+Time: 141.580 ms
+##### bancos existentes depois (esperado: so loja)
+ datname 
+---------
+ loja
+(1 row)
+
+Time: 0.700 ms

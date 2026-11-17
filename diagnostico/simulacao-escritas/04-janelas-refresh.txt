@@ -1,0 +1,2 @@
+refresh-normal refresh_inicio_epoch=1794874272.013860271 refresh_fim_epoch=1794874277.764317240
+refresh-concorrente refresh_inicio_epoch=1794874295.989153875 refresh_fim_epoch=1794874312.085920277
