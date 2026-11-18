@@ -77,7 +77,7 @@ Antes de qualquer mudança, defini uma regra para não me enganar:
 
 - **O que eu via:** com a API no limite, o perfil mostrou o log gastando de 8% a 13% da CPU dela, porque gravava o corpo de cada resposta.
 - **Resultado:** o log ficou ~10x menor, mas a vazão ficou dentro do ruído.
-- **O que aprendi:** uma lição de método. Sem o controle repetido, a mesma mudança teria parecido piorar, melhorar 47.7% ou piorar 8.7%, dependendo de qual par de séries eu comparasse. O ruído do ambiente (~8% entre controles) é maior que o efeito de mudanças pequenas.
+- **O que aprendi:** uma lição de método. Sem o controle repetido, a mesma mudança teria parecido piorar, melhorar 47.7% ou piorar 8.7%, dependendo de qual par de séries eu comparasse. O ruído do ambiente (de 0.9% a 10.8% entre controles do mesmo código, na mesma sessão) é maior que o efeito de mudanças pequenas.
 
 ### Passo 10: mais CPU para a API (10) — revertida
 
@@ -143,7 +143,7 @@ Essas soluções existem porque, em escala, a capacidade de uma máquina acaba. 
 - **Tabela-resumo com trigger:** uma tabela pequena atualizada pelo próprio banco a cada escrita; a leitura fica barata e o custo vai para a escrita [14][15].
 - **Paginação por `OFFSET` × por cursor:** com `OFFSET`, o banco percorre e descarta as linhas anteriores; paginar pelo último valor visto evita isso [7].
 - **Controle A-B-A:** medir o código antigo, o novo e o antigo de novo, na mesma sessão. Se os dois controles batem, a diferença é da mudança, e não da máquina.
-- **Ruído do ambiente:** a variação entre medições iguais (~8% aqui). Efeitos menores que ele não podem ser afirmados.
+- **Ruído do ambiente:** a variação entre medições do mesmo código (aqui, de 0.9% a 10.8% entre controles da mesma sessão, e mais entre dias diferentes). Efeitos menores que ele não podem ser afirmados; por isso o ganho pequeno da 01, medido contra outro dia, é o menos firme.
 - **Perfil de CPU (`node --cpu-prof`):** grava em quais funções o processo gasta CPU [2].
 - **Réplica de leitura:** cópia do banco que recebe as mudanças com atraso e atende leituras [16][17][18].
 - **Cache:** guarda respostas prontas para não ir ao banco; o risco é devolver dado antigo [19].
