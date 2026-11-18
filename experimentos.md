@@ -29,6 +29,38 @@ Registro de cada mudança aplicada na aplicação, com a hipótese, a fonte da i
 | 08 | Tabela-resumo do total por status, mantida por trigger | Aplicada e medida | 08-controle (controle A-B-A) | 90.51 → 265.71 | 604.5 → 162.3 | banco 96.9% → 57.8%; API 24.4% → 50.3% | ~2,9x a vazão; o banco saiu do limite e o gargalo passou para a API |
 | 09 | Log de cada resposta sem o corpo da resposta | Aplicada, sem ganho | controles vizinhos 09-controle-depois-r2 e 09-controle-r3 | 259.45 → 261.31 e 280.90 → 256.56 | 164.2 → 161.8 e 153.0 → 157.8 | API ~49% em todas as séries (no limite) | vazão sem diferença mensurável (+0.7% e −8.7%, dentro da variação de ~8% entre controles); log ~10x menor |
 | 10 | API de 0.5 para 1.0 CPU | Aplicada e medida, revertida | 10-controle (controle A-B-A) | 246.53 → 473.73 | 169.6 → 87.4 | banco 63.3% → 101.3%; API 49.4% → 75.4% | ~1,8x a vazão com +33% de CPU no total; o banco virou o limite; a versão final volta a 0.5 CPU |
+| 11 | Remoção do `idx_pedidos_criado_em_dia`, sem uso | Aplicada, sem ganho de vazão | 11-controle (controle A-B-A) | 296.32 → 296.84 | 115.2 → 115.1 | banco 61.5% → 57.4%; API 50.6% → 50.1% | sem diferença na vazão (+0.2%, controles a −0.9% entre si); 3552 kB a menos em disco |
+
+### A aplicação original e a versão final, medidas no mesmo dia
+
+Para o resultado geral não misturar dias diferentes, a aplicação original (commit `a697110`) foi medida de novo em 17/11/2026, na mesma sessão em que a versão final (`11-sem-indice-dia`) foi medida, com os mesmos parâmetros e os mesmos limites (API com 0.5 CPU, banco com 1.0). As 3 execuções da original registram o commit `a697110`, contrato mantido e 0 arquivos sem commit. O banco foi recriado do zero para cada versão e o autovacuum rodou antes das duas medições.
+
+| Métrica (mediana das 3) | Original, 17/11 ([final-linha-de-base](resultados/20261117-133817-final-linha-de-base), [2](resultados/20261117-134016-final-linha-de-base), [3](resultados/20261117-134216-final-linha-de-base)) | Versão final, 17/11 ([11-sem-indice-dia](resultados/20261117-131145-11-sem-indice-dia), [2](resultados/20261117-131307-11-sem-indice-dia), [3](resultados/20261117-131428-11-sem-indice-dia)) | Original, 03/11 (00-linha-de-base) |
+|---|---|---|---|
+| Requisições/s | 1.86 (execuções: 1.86, 1.77, 1.86) | 296.84 (execuções: 320.36, 292.85, 296.84) | 1.69 (execuções: 1.70, 1.64, 1.69) |
+| Requisições em 60 s | 137 | 17823 | 131 |
+| Mediana geral | 1646.5 ms | 76.0 ms | 2311.9 ms |
+| p95 | 37824.7 ms | 115.1 ms | 38198.7 ms |
+| p99 | 44725.9 ms | 182.8 ms | 49375.5 ms |
+| CPU do banco (média / pico) | 97.2% / 107.6% | 57.4% / 67.1% | 98.5% / 107.3% |
+| CPU da API (média / pico) | 9.3% / 24.6% | 50.1% / 52.3% | 9.7% / 27.9% |
+| Memória do banco / da API | 388.1 / 27.5 MiB | 439.4 / 28.0 MiB | 222.5 / 29.7 MiB |
+
+| Rota (mediana · p95 · p99, em ms) | Original, 17/11 | Versão final, 17/11 |
+|---|---|---|
+| `/clientes/:id` | 599.3 · 1031.7 · 1260.8 | 48.1 · 92.8 · 144.3 |
+| `/clientes?email=` | 1673.3 · 3936.8 · 5549.1 | 66.2 · 93.7 · 159.9 |
+| `/clientes/:id/pedidos` | 30392.2 · 44725.0 · 45534.9 | 96.2 · 170.6 · 199.2 |
+| `/pedidos` | 12190.4 · 27977.3 · 34641.1 | 87.1 · 153.9 · 194.3 |
+| `/produtos/busca` | 1199.5 · 1780.9 · 2064.9 | 74.5 · 100.9 · 167.0 |
+| `/relatorios/vendas-por-dia` | 13084.9 · 17500.9 · 18253.9 | 61.8 · 92.2 · 118.9 |
+| `/relatorios/top-produtos` | 23694.3 · 23694.3 · 23694.3 | 44.7 · 90.7 · 105.1 |
+
+- **Resultado (contas sobre as medianas):** com os mesmos recursos, a versão final atende **~160 vezes mais requisições por segundo** (296.84 contra 1.86) e tem p95 **~329 vezes menor** (115.1 contra 37824.7 ms); o p99 ficou ~245 vezes menor e a mediana geral ~22 vezes menor. As faixas das execuções nem se aproximam (original de 1.77 a 1.86 req/s; final de 292.85 a 320.36).
+- **Onde está o gargalo:** na original, o banco está saturado (97.2% de CPU) e a API quase parada (9.3%), esperando o banco. Na final, o banco tem folga (57.4%) e a API está no limite de 0.5 CPU (50.1%).
+- **Cuidado com as rotas da original:** como ela é muito lenta, as rotas rápidas receberam de 22 a 40 requisições e `top-produtos` só 1 em cada execução (por isso p95 e p99 iguais). A comparação vale pelos números gerais.
+- **Comparação com 03/11:** a original medida hoje ficou 10.1% acima da de 03/11 em req/s (1.86 contra 1.69), com p95 parecido (37824.7 contra 38198.7 ms). A aplicação é a mesma; a diferença vem da máquina, do dia ou do estado do banco (hoje o autovacuum rodou antes da medição, e em 03/11 a medição foi logo depois da criação do banco), sem que se saiba qual. Pela linha de base de 03/11, a razão seria ~176 vezes; o número da mesma sessão (~160 vezes) é o que vale.
+- **Observação:** cada execução da original cobre ~75 s no `recursos.csv`, contra ~61 s na final, porque o k6 espera as requisições lentas terminarem depois dos 60 s, como em 03/11.
 
 ## 01 · Pool de conexões
 
@@ -344,6 +376,36 @@ Registro de cada mudança aplicada na aplicação, com a hipótese, a fonte da i
 - **Custo e ganho (contas sobre as medianas):** a CPU reservada no total foi de 1.5 (0.5 da API + 1.0 do banco) para 2.0, ou +33%. A vazão foi de 259.88 (média dos dois controles) para 473.73 req/s, ou +82%. Em requisições por CPU reservada no total, de ~173 para ~237. A vazão cresceu mais que o custo porque o banco tinha folga e estava esperando a API; com o banco agora no limite, mais CPU só na API não ajudaria mais.
 - **Por que foi revertida:** a pergunta do desafio é deixar a aplicação mais rápida e mais barata sem mudar o que ela faz. A versão final mantém os recursos originais (API com 0.5 CPU, banco com 1.0) e mostra o ganho que veio só de tirar desperdício. A 10 fica como experimento de escala: responde quanto custa crescer quando ~260 req/s não bastarem. A configuração com 0.5 CPU é a mesma dos dois controles, já medidos; depois do revert, o contrato foi conferido ("Contrato mantido").
 - **O que não foi testado:** mais CPU no banco, que passaria a ser o próximo passo de escala, e o cluster de processos Node, que só faz sentido com mais de 1 CPU na API (ver [proximos-testes.md](proximos-testes.md)).
+
+## 11 · Remoção do `idx_pedidos_criado_em_dia`
+
+- **Commit:** `d9a15a3` (mudança, [banco/08-remove-idx-pedidos-criado-em-dia.sql](banco/08-remove-idx-pedidos-criado-em-dia.sql)) · verificação dos planos em `4c0ce23` · resultados em `4183222` (controle), `cd60e1e` (mudança) e `af4824b` (controle depois) · resumo e tamanhos em `a1952e2` ([diagnostico/mudanca-11/resumo-medicoes.txt](diagnostico/mudanca-11/resumo-medicoes.txt)).
+- **O que mudou:** um `.sql` novo com `DROP INDEX idx_pedidos_criado_em_dia`. O `03-indices.sql`, onde o índice foi criado, não foi editado, para o histórico mostrar a criação na 02 e a remoção na 11.
+- **Hipótese:** o índice foi criado na mudança 02 para a consulta antiga de `vendas-por-dia`; desde a 06, essa rota lê a `vendas_por_dia_mv`, e nenhuma rota usa o índice. Removê-lo não deve mudar a vazão nem as latências desta carga, que só lê; economiza o espaço do índice e deixa as escritas em `pedidos` um pouco mais baratas, o que esta carga não mede.
+- **Evidência:**
+  - nas 9 medições da mudança 07, o `idx_scan` do índice ficou em 0 antes e depois ([diagnostico/idx-scan-depois-07.txt](diagnostico/idx-scan-depois-07.txt));
+  - antes de mudar, as 24 consultas de todas as rotas foram analisadas com `EXPLAIN (ANALYZE, BUFFERS)`, 3 vezes cada, com o índice e sem ele (dentro de `BEGIN ... ROLLBACK`): a forma do plano é igual nas 24, e nenhuma usa o índice ([diagnostico/mudanca-11/01-planos-resumo.txt](diagnostico/mudanca-11/01-planos-resumo.txt)). Os tempos variaram entre 0.11x e 2.31x (sem ÷ com), o ruído normal de consultas de poucos milissegundos;
+  - correção: depois da 07, o contador do índice chegou a 3 usos. A causa é o `SELECT count(*) FROM pedidos` dos scripts de diagnóstico, que o banco resolve por esse índice por ser o menor da tabela. Nenhuma rota faz essa consulta; sem o índice, ela usaria outro.
+- **Condições:** A-B-A em sessão contínua, com 60 s de aquecimento antes de cada série, o computador na tomada em todas as execuções e o banco recriado do zero a cada troca de versão: controle com o índice (o banco antes da mudança), mudança sem o índice e controle depois com o índice de novo (com os arquivos de `banco/` do commit anterior). No fim, o banco foi recriado na versão final, sem o índice.
+- **Antes (controle, com o índice):** [11-controle](resultados/20261117-130442-11-controle), [2](resultados/20261117-130603-11-controle), [3](resultados/20261117-130725-11-controle).
+- **Depois (sem o índice):** [11-sem-indice-dia](resultados/20261117-131145-11-sem-indice-dia), [2](resultados/20261117-131307-11-sem-indice-dia), [3](resultados/20261117-131428-11-sem-indice-dia).
+- **Controle depois (com o índice):** [11-controle-depois](resultados/20261117-131849-11-controle-depois), [2](resultados/20261117-132010-11-controle-depois), [3](resultados/20261117-132131-11-controle-depois).
+
+| Métrica (mediana das 3) | Controle | Mudança | Controle depois |
+|---|---|---|---|
+| Requisições/s | 296.32 (execuções: 290.65, 297.88, 296.32) | 296.84 (execuções: 320.36, 292.85, 296.84) | 293.69 (execuções: 286.16, 300.70, 293.69) |
+| Mediana geral | 75.8 ms | 76.0 ms | 76.5 ms |
+| p95 | 115.2 ms | 115.1 ms | 113.7 ms |
+| p99 | 183.9 ms | 182.8 ms | 182.9 ms |
+| CPU / memória do banco | 61.5% / 382.1 MiB | 57.4% / 439.4 MiB | 59.5% / 449.1 MiB |
+| CPU / memória da API | 50.6% / 73.3 MiB | 50.1% / 28.0 MiB | 49.5% / 27.9 MiB |
+
+As rotas estão no resumo. As diferenças pequenas por rota (por exemplo, `/clientes/:id` com 48.1 ms na mudança, contra 64.5 e 61.7 nos controles) vêm de uma única execução fora da curva e não são evidência de efeito.
+
+- **Custo e ganho:** os índices de `pedidos` foram de 42868736 bytes (4 índices) para 39231488 bytes (3 índices): 3637248 bytes, ou 3552 kB, a menos.
+- **Conclusão: aplicada, sem ganho de vazão.** A mudança ficou a +0.2% do controle antes e a +1.1% do controle depois, e os dois controles diferem −0.9% entre si: a diferença está dentro do ruído, e as faixas se sobrepõem. O ganho concreto é o espaço em disco e, provavelmente, escritas um pouco mais baratas. A série `11-sem-indice-dia` é a medição da versão final da aplicação.
+- **Observações sem explicação:** a memória média da API no primeiro controle (73.3 MiB, contra ~28 MiB nas outras séries) e a memória do banco subindo ao longo da sessão (382.1, 439.4 e 449.1 MiB).
+- **Lição:** um índice que ajudou numa etapa pode ficar sem uso na seguinte. Antes de removê-lo, conferir o uso (`idx_scan`) e os planos de todas as consultas.
 
 ## Simulação de escritas: limites das mudanças 04, 06 e 08
 
