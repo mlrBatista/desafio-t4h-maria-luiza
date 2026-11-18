@@ -66,7 +66,7 @@ O mercado costuma resolver lentidão acrescentando peças, como uma réplica ou 
 
 ## 6. Experimento e resultado
 
-Cada mudança foi medida 3 vezes, e comparei as medianas. A partir da 03, o "antes" é um controle com o código anterior, medido no mesmo dia, porque a máquina variou mais entre dias do que o efeito de algumas mudanças. Desde a 07, o controle foi medido antes e depois da mudança. Os valores medidos aparecem como o `medir.sh` os grava, com ponto decimal.
+Cada mudança foi medida 3 vezes, e comparei as medianas. A partir da 03, o "antes" é um controle com o código anterior, medido no mesmo dia, porque a máquina variou mais entre dias do que o efeito de algumas mudanças. Desde a 07, o controle foi medido antes e depois da mudança. Os valores medidos aparecem como o `medir.sh` os grava, com ponto decimal. Ao conferir os resumos, notei que o pico de CPU gravado pelo `medir.sh` às vezes ficava menor que a média, o que é impossível. A causa estava no próprio script: ele comparava os valores como texto ("9.5" > "53.4"). Recalculei as 117 execuções a partir dos dados brutos: o pico estava errado em 113 de 234 casos, e as médias, que são o que este artigo usa, estavam certas ([diagnóstico](../diagnostico/recursos-max/comparacao.txt)). Como o script faz parte da régua, não o editei: propus a correção no repositório do desafio ([PR #18](https://github.com/tech4humans-brasil/t4h-desafios/pull/18)).
 
 | Mudança | Hipótese | p95 antes → depois | req/s antes → depois | CPU do banco | CPU da API | Memória do banco (MiB) | Memória da API (MiB) | Pastas de resultados | Conclusão |
 |---|---|---|---|---|---|---|---|---|---|
