@@ -8,7 +8,9 @@ A aplicação é a API de uma loja fictícia, em Node.js (Express) com PostgreSQ
 
 **O problema.** Sob a carga do teste (20 usuários virtuais por 60 s), a aplicação original atendia 1.69 requisições/s, com p95 de 38198.7 ms. O banco ficava a ~98% de CPU porque quase todas as consultas liam tabelas inteiras, e algumas rotas faziam dezenas de consultas por requisição ou somavam milhões de linhas a cada chamada.
 
-**O que foi feito.** Dez mudanças, uma por commit, cada uma medida 3 vezes com `scripts/medir.sh` e com o contrato verificado (as respostas da API continuam idênticas):
+**O resultado.** Medidas no mesmo dia (17/11/2026), com os mesmos recursos (API com 0.5 CPU, banco com 1.0), a aplicação original fez 1.86 requisições/s com p95 de 37824.7 ms, e a versão final fez 296.84 requisições/s com p95 de 115.1 ms: ~160 vezes mais vazão e p95 ~329 vezes menor (medianas de 3 execuções; ver `experimentos.md`, seção "A aplicação original e a versão final, medidas no mesmo dia").
+
+**O que foi feito.** Onze mudanças, uma por commit, cada uma medida 3 vezes com `scripts/medir.sh` e com o contrato verificado (as respostas da API continuam idênticas):
 
 | # | Mudança | req/s antes → depois (mediana de 3) | Resultado |
 |---|---|---|---|
@@ -22,6 +24,7 @@ A aplicação é a API de uma loja fictícia, em Node.js (Express) com PostgreSQ
 | 08 | Total de pedidos por status numa tabela-resumo mantida por trigger | 90.51 → 265.71 | ~2,9x; o banco saiu do limite e o gargalo passou para a API |
 | 09 | Log de cada resposta sem o corpo da resposta | 259.45 → 261.31 e 280.90 → 256.56 (dois pares) | sem ganho de vazão mensurável; log ~10x menor |
 | 10 | Limite de CPU da API de 0.5 para 1.0 (experimento de escala) | 246.53 → 473.73 | ~1,8x com +33% de CPU no total; revertida: a versão final mantém os recursos originais |
+| 11 | Remoção de um índice sem uso desde a mudança 06 | 296.32 → 296.84 | sem diferença na vazão; 3552 kB a menos em disco |
 
 A versão final roda com os limites originais (API com 0.5 CPU, banco com 1.0 CPU). Uma simulação de escritas numa cópia do banco mediu o que a carga do desafio não mostra: as views dos relatórios ficam desatualizadas até o `REFRESH`, que custa ~2 a 3 s e, no modo normal, trava as leituras; o total por status mantido por trigger fica sempre correto, com custo de ~20% nas escritas. Um segundo diagnóstico, com o `medir.sh` rodando junto com escritas e `REFRESH` no banco, mostrou o efeito para quem usa a API: durante um `REFRESH` normal, o ranking de mais vendidos ficou travado por até ~7,5 s (p99 de 5178.7 ms), o `REFRESH CONCURRENTLY` evitou a espera, e escritas a 50 por segundo não tiveram efeito mensurável nas leituras. As pastas desse diagnóstico usam o prefixo `diag-` e não se comparam com as mudanças (ver `experimentos.md`).
 
@@ -29,11 +32,11 @@ A partir da 03, o "antes" é um controle medido no mesmo dia e no mesmo banco, c
 
 **Por onde ler.**
 
-1. [experimentos.md](experimentos.md): cada mudança com hipótese, fonte da ideia, pastas de antes e depois, métricas e conclusão, além das séries que ficaram de fora e por quê.
-2. [diagnostico/](diagnostico/): as evidências que motivaram cada mudança (`EXPLAIN ANALYZE`, perfil de CPU da API, comparações de respostas).
-3. [resultados/](resultados/): a saída do `medir.sh` de cada execução, sem edição.
-
-O artigo (`artigo/artigo.md`) e as ideias pesquisadas e não testadas (`proximos-testes.md`) estão em preparação.
+1. [artigo/artigo.md](artigo/artigo.md): o artigo, com o diagnóstico, as fontes, as alternativas, a solução escolhida e os resultados. O passo a passo completo do raciocínio e um glossário dos conceitos estão em [artigo/raciocinio-e-conceitos.md](artigo/raciocinio-e-conceitos.md).
+2. [experimentos.md](experimentos.md): cada mudança com hipótese, fonte da ideia, pastas de antes e depois, métricas e conclusão, além das séries que ficaram de fora e por quê.
+3. [diagnostico/](diagnostico/): as evidências que motivaram cada mudança (`EXPLAIN ANALYZE`, perfil de CPU da API, comparações de respostas).
+4. [resultados/](resultados/): a saída do `medir.sh` de cada execução, sem edição.
+5. [proximos-testes.md](proximos-testes.md): as ideias pesquisadas e não testadas, com fonte, ganho esperado e como testar.
 
 As instruções originais para instalar, rodar e medir a aplicação continuam abaixo, sem alteração.
 
