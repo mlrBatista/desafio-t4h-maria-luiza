@@ -52,7 +52,7 @@ Quando a consulta precisa somar tudo, o índice não evita o trabalho. Gupta e M
 | D. Réplica de leitura: uma cópia do banco só para leituras [16][18] | um banco inteiro a mais | só ajuda com o banco no limite; na versão final, o limite é a API | a cópia recebe as mudanças com atraso [17]; mais uma peça para manter | alto |
 | E. Mais CPU | +0.5 CPU na API (+33% no total) | medido: ~1,8x | baixo | muito baixo |
 
-Avaliei as alternativas pelo gargalo de cada momento: o banco no começo, depois a API. A, B e E foram aplicadas e medidas. C e D ficaram como testes futuros, e o desempenho delas na tabela é dedução minha, a partir do teste de carga e da CPU medida, sem teste. O custo de B não aparece no teste de carga, que só lê, e por isso foi medido em dois testes à parte (seção 7): numa simulação de escritas numa cópia do banco, sem a API, o trigger deixou as escritas ~20% mais lentas e o `REFRESH` levou ~2 a ~3 s; com o teste de carga rodando junto, o `REFRESH` levou ~7,5 s.
+Avaliei as alternativas pelo gargalo de cada momento, que alternou entre o banco e a API ao longo das mudanças (seção 6). A, B e E foram aplicadas e medidas. C e D ficaram como testes futuros, e o desempenho delas na tabela é dedução minha, a partir do teste de carga e da CPU medida, sem teste. O custo de B não aparece no teste de carga, que só lê, e por isso foi medido em dois testes à parte (seção 7): numa simulação de escritas numa cópia do banco, sem a API, o trigger deixou as escritas ~20% mais lentas e o `REFRESH` levou ~2 a ~3 s; com o teste de carga rodando junto, o `REFRESH` levou ~7,5 s.
 
 A e B reduzem o trabalho; C, D e E acrescentam peças ou capacidade. Acrescentar capacidade enquanto o banco lê tabelas inteiras é pagar para desperdiçar mais rápido.
 
